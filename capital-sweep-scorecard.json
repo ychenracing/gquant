@@ -1,0 +1,434 @@
+{
+  "rows": [
+    {
+      "key": "turtle_5",
+      "window": [
+        "2025-04-01",
+        "2026-07-20"
+      ],
+      "provenance": "MEASURED",
+      "pass": true,
+      "verdict": {
+        "return": true,
+        "drawdown": true
+      },
+      "baseline": {
+        "total_return": 11.15992376,
+        "max_drawdown": -0.15857336,
+        "sharpe": null
+      },
+      "glmqwen": {
+        "total_return": 12.805495285732302,
+        "max_drawdown": -0.14173125040546797,
+        "sharpe": 4.075688769278101,
+        "calmar": 49.23996660280763,
+        "avg_exposure": 0.7419751944341302,
+        "n_fills": 248,
+        "regime_days": {
+          "TREND": 190,
+          "WEAKEN": 69,
+          "CRASH": 54,
+          "RECOVERY": 3
+        },
+        "exposure_by_regime": {
+          "CRASH": 0.0328,
+          "RECOVERY": 0.0,
+          "TREND": 0.9557,
+          "WEAKEN": 0.7406
+        },
+        "sell_reasons": {
+          "rebalance_trim": 83,
+          "rotation_exit": 26,
+          "risk_off_trim": 19,
+          "extended_pair_stop": 8,
+          "regime_crash": 4,
+          "core_trend_break": 3,
+          "crash_day_exit": 3,
+          "extended_pair_stop_deferred": 1
+        },
+        "stress": {
+          "in_window": true,
+          "return": -0.026797788857622185,
+          "max_drawdown": -0.030904614501045313
+        }
+      },
+      "sweep": [
+        {
+          "capital": 1000000.0,
+          "label": "100万",
+          "ok": true,
+          "total_return": 12.573322214593757,
+          "max_drawdown": -0.14198472252361338,
+          "sharpe": 4.065989704009752
+        },
+        {
+          "capital": 2000000.0,
+          "label": "200万",
+          "ok": true,
+          "total_return": 12.805495285732302,
+          "max_drawdown": -0.14173125040546797,
+          "sharpe": 4.075688769278101
+        },
+        {
+          "capital": 5000000.0,
+          "label": "500万",
+          "ok": true,
+          "total_return": 12.83935576616619,
+          "max_drawdown": -0.14181961106989927,
+          "sharpe": 4.080615117030745
+        },
+        {
+          "capital": 10000000.0,
+          "label": "1000万",
+          "ok": true,
+          "total_return": 12.806416655529997,
+          "max_drawdown": -0.14183574302691382,
+          "sharpe": 4.078846801244263
+        },
+        {
+          "capital": 30000000.0,
+          "label": "3000万",
+          "ok": true,
+          "total_return": 12.811776769778081,
+          "max_drawdown": -0.1418074177675659,
+          "sharpe": 4.079873415371535
+        },
+        {
+          "capital": 100000000.0,
+          "label": "1亿",
+          "ok": true,
+          "total_return": 12.808479790007864,
+          "max_drawdown": -0.14180116237693186,
+          "sharpe": 4.07952350169329
+        }
+      ]
+    },
+    {
+      "key": "track_trend_b",
+      "window": [
+        "2025-04-01",
+        "2026-07-24"
+      ],
+      "provenance": "MEASURED",
+      "pass": true,
+      "verdict": {
+        "return": true,
+        "drawdown": true,
+        "sharpe": true
+      },
+      "baseline": {
+        "total_return": 11.551,
+        "max_drawdown": -0.163,
+        "sharpe": 3.57
+      },
+      "glmqwen": {
+        "total_return": 12.573322214593757,
+        "max_drawdown": -0.14198472252361338,
+        "sharpe": 4.03881837408667,
+        "calmar": 46.99127814556668,
+        "avg_exposure": 0.7297532984574892,
+        "n_fills": 216,
+        "regime_days": {
+          "TREND": 190,
+          "WEAKEN": 69,
+          "CRASH": 58,
+          "RECOVERY": 3
+        },
+        "exposure_by_regime": {
+          "CRASH": 0.0306,
+          "RECOVERY": 0.0,
+          "TREND": 0.9522,
+          "WEAKEN": 0.7365
+        },
+        "sell_reasons": {
+          "rebalance_trim": 56,
+          "rotation_exit": 26,
+          "risk_off_trim": 19,
+          "extended_pair_stop": 8,
+          "regime_crash": 4,
+          "core_trend_break": 3,
+          "crash_day_exit": 3,
+          "extended_pair_stop_deferred": 1
+        },
+        "stress": {
+          "in_window": true,
+          "return": -0.02672718854208933,
+          "max_drawdown": -0.030836195533424093
+        }
+      },
+      "sweep": [
+        {
+          "capital": 1000000.0,
+          "label": "100万",
+          "ok": true,
+          "total_return": 12.573322214593757,
+          "max_drawdown": -0.14198472252361338,
+          "sharpe": 4.03881837408667
+        },
+        {
+          "capital": 2000000.0,
+          "label": "200万",
+          "ok": true,
+          "total_return": 12.805495285732302,
+          "max_drawdown": -0.14173125040546797,
+          "sharpe": 4.048444588308415
+        },
+        {
+          "capital": 5000000.0,
+          "label": "500万",
+          "ok": true,
+          "total_return": 12.83935576616619,
+          "max_drawdown": -0.14181961106989927,
+          "sharpe": 4.053333911598661
+        },
+        {
+          "capital": 10000000.0,
+          "label": "1000万",
+          "ok": true,
+          "total_return": 12.806416655529997,
+          "max_drawdown": -0.14183574302691382,
+          "sharpe": 4.051578887472078
+        },
+        {
+          "capital": 30000000.0,
+          "label": "3000万",
+          "ok": true,
+          "total_return": 12.811776769778081,
+          "max_drawdown": -0.1418074177675659,
+          "sharpe": 4.052597785220415
+        },
+        {
+          "capital": 100000000.0,
+          "label": "1亿",
+          "ok": true,
+          "total_return": 12.808479790007864,
+          "max_drawdown": -0.14180116237693186,
+          "sharpe": 4.0522505016839965
+        }
+      ]
+    },
+    {
+      "key": "glmcsm_6",
+      "window": [
+        "2025-01-02",
+        "2026-07-24"
+      ],
+      "provenance": "MEASURED",
+      "pass": true,
+      "verdict": {
+        "return": true,
+        "drawdown": true,
+        "sharpe": true
+      },
+      "baseline": {
+        "total_return": 10.6821,
+        "max_drawdown": -0.1432,
+        "sharpe": 3.69
+      },
+      "glmqwen": {
+        "total_return": 15.26416111204782,
+        "max_drawdown": -0.14178210695573634,
+        "sharpe": 3.789892354172868,
+        "calmar": 37.77835443943117,
+        "avg_exposure": 0.7059190311523805,
+        "n_fills": 285,
+        "regime_days": {
+          "TREND": 210,
+          "WEAKEN": 84,
+          "CRASH": 77,
+          "RECOVERY": 6
+        },
+        "exposure_by_regime": {
+          "CRASH": 0.0411,
+          "RECOVERY": 0.2937,
+          "TREND": 0.9503,
+          "WEAKEN": 0.7339
+        },
+        "sell_reasons": {
+          "rebalance_trim": 100,
+          "rotation_exit": 24,
+          "risk_off_trim": 23,
+          "extended_pair_stop": 8,
+          "regime_crash": 7,
+          "core_trend_break": 6,
+          "crash_day_exit": 4,
+          "extended_pair_stop_deferred": 1
+        },
+        "stress": {
+          "in_window": true,
+          "return": -0.026977273056413176,
+          "max_drawdown": -0.031081531789936334
+        }
+      },
+      "sweep": [
+        {
+          "capital": 1000000.0,
+          "label": "100万",
+          "ok": false,
+          "total_return": 13.62814238272933,
+          "max_drawdown": -0.1419064200809812,
+          "sharpe": 3.6559652196491563
+        },
+        {
+          "capital": 2000000.0,
+          "label": "200万",
+          "ok": true,
+          "total_return": 15.26416111204782,
+          "max_drawdown": -0.14178210695573634,
+          "sharpe": 3.789892354172868
+        },
+        {
+          "capital": 5000000.0,
+          "label": "500万",
+          "ok": true,
+          "total_return": 15.296559973178361,
+          "max_drawdown": -0.14175653907354857,
+          "sharpe": 3.792673696928469
+        },
+        {
+          "capital": 10000000.0,
+          "label": "1000万",
+          "ok": true,
+          "total_return": 15.278386483531381,
+          "max_drawdown": -0.1417918305372795,
+          "sharpe": 3.793165919100298
+        },
+        {
+          "capital": 30000000.0,
+          "label": "3000万",
+          "ok": true,
+          "total_return": 15.27333009752483,
+          "max_drawdown": -0.14180138691652722,
+          "sharpe": 3.7930862455002243
+        },
+        {
+          "capital": 100000000.0,
+          "label": "1亿",
+          "ok": true,
+          "total_return": 15.242920842047425,
+          "max_drawdown": -0.14180111385137495,
+          "sharpe": 3.7909960997806973
+        }
+      ]
+    },
+    {
+      "key": "momentum",
+      "window": [
+        "2025-04-01",
+        "2026-07-24"
+      ],
+      "provenance": "REPORTED",
+      "pass": true,
+      "verdict": {
+        "return": true,
+        "drawdown": true,
+        "sharpe": true
+      },
+      "baseline": {
+        "total_return": 10.5442,
+        "max_drawdown": -0.1519,
+        "sharpe": 3.96
+      },
+      "glmqwen": {
+        "total_return": 12.573322214593757,
+        "max_drawdown": -0.14198472252361338,
+        "sharpe": 4.03881837408667,
+        "calmar": 46.99127814556668,
+        "avg_exposure": 0.7297532984574892,
+        "n_fills": 216,
+        "regime_days": {
+          "TREND": 190,
+          "WEAKEN": 69,
+          "CRASH": 58,
+          "RECOVERY": 3
+        },
+        "exposure_by_regime": {
+          "CRASH": 0.0306,
+          "RECOVERY": 0.0,
+          "TREND": 0.9522,
+          "WEAKEN": 0.7365
+        },
+        "sell_reasons": {
+          "rebalance_trim": 56,
+          "rotation_exit": 26,
+          "risk_off_trim": 19,
+          "extended_pair_stop": 8,
+          "regime_crash": 4,
+          "core_trend_break": 3,
+          "crash_day_exit": 3,
+          "extended_pair_stop_deferred": 1
+        },
+        "stress": {
+          "in_window": true,
+          "return": -0.02672718854208933,
+          "max_drawdown": -0.030836195533424093
+        }
+      },
+      "sweep": [
+        {
+          "capital": 1000000.0,
+          "label": "100万",
+          "ok": true,
+          "total_return": 12.573322214593757,
+          "max_drawdown": -0.14198472252361338,
+          "sharpe": 4.03881837408667
+        },
+        {
+          "capital": 2000000.0,
+          "label": "200万",
+          "ok": true,
+          "total_return": 12.805495285732302,
+          "max_drawdown": -0.14173125040546797,
+          "sharpe": 4.048444588308415
+        },
+        {
+          "capital": 5000000.0,
+          "label": "500万",
+          "ok": true,
+          "total_return": 12.83935576616619,
+          "max_drawdown": -0.14181961106989927,
+          "sharpe": 4.053333911598661
+        },
+        {
+          "capital": 10000000.0,
+          "label": "1000万",
+          "ok": true,
+          "total_return": 12.806416655529997,
+          "max_drawdown": -0.14183574302691382,
+          "sharpe": 4.051578887472078
+        },
+        {
+          "capital": 30000000.0,
+          "label": "3000万",
+          "ok": true,
+          "total_return": 12.811776769778081,
+          "max_drawdown": -0.1418074177675659,
+          "sharpe": 4.052597785220415
+        },
+        {
+          "capital": 100000000.0,
+          "label": "1亿",
+          "ok": true,
+          "total_return": 12.808479790007864,
+          "max_drawdown": -0.14180116237693186,
+          "sharpe": 4.0522505016839965
+        }
+      ]
+    }
+  ],
+  "all_pass": true,
+  "holdout": {
+    "total_return": -0.02744774859339183,
+    "max_drawdown": -0.2187280481381123,
+    "sharpe": 0.10234522747827374,
+    "calmar": -0.1301069782054582,
+    "avg_exposure": 0.48750978554591773,
+    "n_fills": 225,
+    "regime_days": {
+      "TREND": 104,
+      "CRASH": 72,
+      "WEAKEN": 49,
+      "RECOVERY": 16
+    }
+  }
+}
