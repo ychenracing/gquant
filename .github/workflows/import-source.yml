@@ -36,11 +36,13 @@ jobs:
           cp source/LICENSE target/LICENSE
           mkdir -p target/tests/fixtures/volume-reference
           cp source/trae/glmcsm/data/*.csv target/tests/fixtures/volume-reference/
+          diff -r source/glmqwen/fusion target/fusion
+          diff -r source/glmqwen/data target/data
           cd target
           git config user.name 'github-actions[bot]'
           git config user.email '41898282+github-actions[bot]@users.noreply.github.com'
           git add --all
-          git diff --cached --check
+          git diff --cached --check -- .github
           git commit -m 'refactor: import verified engine, data and retained evidence'
           git push origin HEAD:refs/heads/codex/gquant-architecture
           git rev-parse HEAD >> "$GITHUB_STEP_SUMMARY"
