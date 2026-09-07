@@ -1,0 +1,46 @@
+name: Import pinned research source
+on:
+  push:
+    branches: [codex/gquant-architecture]
+    paths: ['.github/workflows/import-source.yml']
+permissions:
+  contents: write
+concurrency:
+  group: import-gquant-source
+  cancel-in-progress: false
+jobs:
+  import:
+    runs-on: ubuntu-latest
+    timeout-minutes: 10
+    steps:
+      - uses: actions/checkout@v4
+        with:
+          path: target
+          ref: codex/gquant-architecture
+      - uses: actions/checkout@v4
+        with:
+          repository: ychenracing/trades
+          ref: 69d508811bc5a25f94e9ab05d21db908b5adb305
+          path: source
+          persist-credentials: false
+      - name: Verify immutable source and import without transformations
+        shell: bash
+        run: |
+          set -euo pipefail
+          test "$(git -C source rev-parse HEAD)" = 69d508811bc5a25f94e9ab05d21db908b5adb305
+          test "$(git -C target rev-parse HEAD)" = "$GITHUB_SHA"
+          test ! -e target/fusion
+          test ! -e target/data
+          (cd source/glmqwen/data && sha256sum -c SHA256SUMS)
+          cp -a source/glmqwen/. target/
+          cp source/LICENSE target/LICENSE
+          mkdir -p target/tests/fixtures/volume-reference
+          cp source/trae/glmcsm/data/*.csv target/tests/fixtures/volume-reference/
+          cd target
+          git config user.name 'github-actions[bot]'
+          git config user.email '41898282+github-actions[bot]@users.noreply.github.com'
+          git add --all
+          git diff --cached --check
+          git commit -m 'refactor: import verified engine, data and retained evidence'
+          git push origin HEAD:refs/heads/codex/gquant-architecture
+          git rev-parse HEAD >> "$GITHUB_STEP_SUMMARY"
