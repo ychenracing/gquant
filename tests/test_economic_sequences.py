@@ -28,7 +28,7 @@ def source_behavior_sha256():
         relative = str(path.relative_to(ROOT)).replace("\\", "/")
         hasher.update(relative.encode())
         hasher.update(b"\0")
-        hasher.update(path.read_bytes())
+        hasher.update(path.read_bytes().replace(b"\r\n", b"\n"))
         hasher.update(b"\0")
     return hasher.hexdigest()
 
