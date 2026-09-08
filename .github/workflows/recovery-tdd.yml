@@ -8,6 +8,7 @@ on:
 permissions:
   contents: read
 
+# Temporary exact-HEAD preflight; remove before opening the final PR.
 jobs:
   preflight:
     runs-on: ubuntu-latest
