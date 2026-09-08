@@ -248,6 +248,27 @@ def parse_actual_events(
     return result
 
 
+def require_complete_actual_sessions(
+    events: dict[pd.Timestamp, dict[str, list[dict[str, object]]]],
+    trading_days: pd.DatetimeIndex,
+    *,
+    after: pd.Timestamp,
+    end: pd.Timestamp,
+) -> None:
+    expected = {pd.Timestamp(day) for day in trading_days if after < pd.Timestamp(day) <= end}
+    actual = set(events)
+    missing = sorted(expected - actual)
+    unexpected = sorted(actual - expected)
+    if missing:
+        joined = ", ".join(str(day.date()) for day in missing)
+        raise ValueError(f"missing authoritative broker sessions: {joined}")
+    if unexpected:
+        joined = ", ".join(str(day.date()) for day in unexpected)
+        raise ValueError(f"unexpected broker sessions outside resume window: {joined}")
+    if not expected:
+        raise ValueError("resume end contains no trading sessions after saved state")
+
+
 def publish_account_state(
     output: Path,
     cfg: Config,
@@ -308,11 +329,22 @@ def resume_and_publish(
     if end is not None:
         raw = copy.deepcopy(dict(cfg))
         raw["end"] = str(end)
-        cfg = validate_config(raw)  # type: ignore[arg-type]
-    if pd.Timestamp(cfg["end"]) <= state.last_processed_day:
+        cfg = validate_config(raw)
+    requested_end = pd.Timestamp(cfg["end"])
+    if requested_end <= state.last_processed_day:
         raise ValueError("resume end must be after saved account state")
+
     events = parse_actual_events(actual_events, state.last_processed_day) if actual_events is not None else {}
     snapshot = admit_snapshot(data_dir)
+    bars = {symbol: snapshot.bars[symbol] for symbol in cfg["universe"]}
+    trading_days = pd.DatetimeIndex(build_panels(bars)["close"].index)
+    require_complete_actual_sessions(
+        events,
+        trading_days,
+        after=state.last_processed_day,
+        end=requested_end,
+    )
+
     engine = BacktestEngine(cfg, data_dir)
     result = engine.run(snapshot.bars, state=state, actual_events=events)
     final_state = engine.last_state
