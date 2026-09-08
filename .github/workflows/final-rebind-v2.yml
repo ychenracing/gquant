@@ -114,6 +114,12 @@ jobs:
               'operations date narrowing',
           )
           PY
+          python -m ruff check --fix \
+            src/gquant/research/robustness.py \
+            src/gquant/strategy/planner.py \
+            src/gquant/application/state.py \
+            src/gquant/application/operations.py \
+            tests/test_application.py
           python -m ruff format \
             src/gquant/research/robustness.py \
             src/gquant/strategy/planner.py \
