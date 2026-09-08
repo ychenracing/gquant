@@ -102,9 +102,7 @@ def test_snapshot_prefix_identity_allows_future_extension_but_rejects_history_re
     )
     extended = Snapshot(
         bars={
-            "sz300308": _bars(
-                [("2026-08-27", 100.0), ("2026-08-28", 101.0), ("2026-08-31", 999.0)]
-            )
+            "sz300308": _bars([("2026-08-27", 100.0), ("2026-08-28", 101.0), ("2026-08-31", 999.0)])
         },
         info={},
     )

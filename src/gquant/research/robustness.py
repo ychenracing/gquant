@@ -63,9 +63,7 @@ def diagnostic_configs(cfg: Config) -> list[tuple[str, Config]]:
     return rows
 
 
-def profit_concentration(
-    result: Result, cfg: Config, close: pd.DataFrame
-) -> dict[str, Any]:
+def profit_concentration(result: Result, cfg: Config, close: pd.DataFrame) -> dict[str, Any]:
     """Attribute simulated account profit by symbol cash flows plus terminal mark.
 
     This is attribution, not a counterfactual exclusion result. It intentionally uses the
@@ -110,7 +108,9 @@ def profit_concentration(
     ]
     optical_profit = sum(pnl.get(symbol, 0.0) for symbol in _OPTICAL_CHAIN_PROXY)
     semiconductor_profit = sum(pnl.get(symbol, 0.0) for symbol in _SEMICONDUCTOR_PROXY)
-    top_five = sum(value for _, value in sorted(pnl.items(), key=lambda item: item[1], reverse=True)[:5])
+    top_five = sum(
+        value for _, value in sorted(pnl.items(), key=lambda item: item[1], reverse=True)[:5]
+    )
     return {
         "method": "simulated_cash_flow_plus_terminal_mark_attribution",
         "counterfactual": False,

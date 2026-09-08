@@ -107,7 +107,9 @@ class EngineState:
             "exposure_values": list(self.exposure_values),
             "regime_values": list(self.regime_values),
             "data_prefix_sha256": self.data_prefix_sha256,
-            "reset_boundary": dict(self.reset_boundary) if self.reset_boundary is not None else None,
+            "reset_boundary": dict(self.reset_boundary)
+            if self.reset_boundary is not None
+            else None,
             "reconciliations": [dict(item) for item in self.reconciliations],
         }
 
@@ -197,7 +199,10 @@ class EngineState:
         equity_values = [float(value) for value in equity_values_raw]
         exposure_values = [float(value) for value in exposure_values_raw]
         regime_values = [str(value) for value in regime_values_raw]
-        if len({len(equity_dates), len(equity_values), len(exposure_values), len(regime_values)}) != 1:
+        if (
+            len({len(equity_dates), len(equity_values), len(exposure_values), len(regime_values)})
+            != 1
+        ):
             raise ValueError("continuation history lengths differ")
         last_processed_day = _day(raw.get("last_processed_day"), "last_processed_day")
         if equity_dates and last_processed_day != equity_dates[-1]:

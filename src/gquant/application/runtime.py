@@ -146,6 +146,8 @@ def capture_state(runtime: Runtime) -> EngineState:
         equity_values=list(runtime.equity_values),
         exposure_values=list(runtime.exposure_values),
         regime_values=list(runtime.regime_values),
-        reset_boundary=(dict(runtime.reset_boundary) if runtime.reset_boundary is not None else None),
+        reset_boundary=(
+            dict(runtime.reset_boundary) if runtime.reset_boundary is not None else None
+        ),
         reconciliations=[dict(item) for item in runtime.reconciliations],
     )

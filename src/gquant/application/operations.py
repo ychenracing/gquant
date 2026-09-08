@@ -89,7 +89,9 @@ def _snapshot_prefix_sha256(
 
 def _state_account(state: EngineState) -> dict[str, object]:
     return {
-        "as_of": str(state.last_processed_day.date()) if state.last_processed_day is not None else None,
+        "as_of": str(state.last_processed_day.date())
+        if state.last_processed_day is not None
+        else None,
         "cash": state.account.cash,
         "positions": [
             {
@@ -166,8 +168,7 @@ def _initialize_from_snapshot(
 
     account = Account(cash=cash, positions=positions)
     marks = {
-        symbol: float(panels["close"][symbol].loc[:as_of].dropna().iloc[-1])
-        for symbol in positions
+        symbol: float(panels["close"][symbol].loc[:as_of].dropna().iloc[-1]) for symbol in positions
     }
     equity = cash + sum(p.shares * marks[p.symbol] for p in positions.values())
     if not math.isfinite(equity) or equity <= 0:
@@ -370,7 +371,11 @@ def resume_and_publish(
     if requested_end <= state.last_processed_day:
         raise ValueError("resume end must be after saved account state")
 
-    events = parse_actual_events(actual_events, state.last_processed_day) if actual_events is not None else {}
+    events = (
+        parse_actual_events(actual_events, state.last_processed_day)
+        if actual_events is not None
+        else {}
+    )
     snapshot = admit_snapshot(data_dir)
     if state.data_prefix_sha256 is None:
         raise ValueError("saved account state has no admitted data prefix identity")
@@ -400,7 +405,9 @@ def resume_and_publish(
         "account_reset": bool(final_state.reset_boundary),
         "reset_boundary": dict(final_state.reset_boundary or {}),
         "last_processed_day": (
-            str(final_state.last_processed_day.date()) if final_state.last_processed_day is not None else None
+            str(final_state.last_processed_day.date())
+            if final_state.last_processed_day is not None
+            else None
         ),
         "actual_sessions": [str(day.date()) for day in sorted(events)],
     }
