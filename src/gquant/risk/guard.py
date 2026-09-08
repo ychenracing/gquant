@@ -2,9 +2,29 @@
 
 from __future__ import annotations
 
+import math
+
 import pandas as pd
 
 from gquant.config import Config
+
+
+def _number(raw: object, label: str) -> float:
+    if isinstance(raw, bool) or not isinstance(raw, int | float | str):
+        raise ValueError(f"invalid {label}")
+    value = float(raw)
+    if not math.isfinite(value):
+        raise ValueError(f"invalid {label}")
+    return value
+
+
+def _nonnegative_int(raw: object, label: str) -> int:
+    if isinstance(raw, bool) or not isinstance(raw, int | str):
+        raise ValueError(f"invalid {label}")
+    value = int(raw)
+    if value < 0:
+        raise ValueError(f"invalid {label}")
+    return value
 
 
 class PortfolioGuard:
@@ -24,6 +44,34 @@ class PortfolioGuard:
         window = self.cfg["peak_window"]
         recent = self.equity_hist[-window:] if window else self.equity_hist
         return max(recent) if recent else self.peak
+
+    def export_state(self) -> dict[str, object]:
+        return {
+            "peak": self.peak,
+            "equity_hist": list(self.equity_hist),
+            "flat_days": self.flat_days,
+            "ramp_remaining": self.ramp_remaining,
+            "target_exposure": self.target_exposure,
+            "abs_floor_spent": self._abs_floor_spent,
+            "events": list(self.events),
+        }
+
+    def restore_state(self, raw: dict[str, object]) -> None:
+        history = raw.get("equity_hist", [])
+        events = raw.get("events", [])
+        if not isinstance(history, list) or not isinstance(events, list):
+            raise ValueError("invalid portfolio guard continuation state")
+        self.peak = _number(raw.get("peak", 0.0), "guard peak")
+        self.equity_hist = [_number(v, "guard equity") for v in history]
+        self.flat_days = _nonnegative_int(raw.get("flat_days", 0), "guard flat_days")
+        self.ramp_remaining = _nonnegative_int(raw.get("ramp_remaining", 0), "guard ramp_remaining")
+        self.target_exposure = _number(raw.get("target_exposure", 1.0), "guard exposure")
+        self._abs_floor_spent = bool(raw.get("abs_floor_spent", False))
+        self.events = [str(v) for v in events]
+        if self.peak < 0:
+            raise ValueError("invalid portfolio guard continuation state")
+        if not 0.0 <= self.target_exposure <= 1.0:
+            raise ValueError("invalid portfolio guard exposure state")
 
     def record_equity(
         self,

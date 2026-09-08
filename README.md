@@ -2,7 +2,7 @@
 
 Gquant 是面向 A 股科技产业链的日线量化研究与人工决策支持工具。它读取经过校验的行情，在收盘后评价市场状态、选择股票并形成下一可交易日的模拟订单，输出权益、成交和风险事件报告。它不连接券商，不替代真实账户核对，也不自动下单。
 
-默认策略在 7 只核心股票中按最近 63 个交易日收益率排序，最多持有 2 只，结合平均真实波幅（ATR）定仓、市场状态与组合回撤控制。优势是规则可复算、选股集中且执行约束明确；代价是对固定股池和趋势行情依赖较强。已有历史验收通过，不代表跨行情稳定盈利。
+默认策略在 7 只核心股票中按最近 63 个交易日收益率排序，最多持有 2 只，结合平均真实波幅（ATR）定仓、市场状态与组合回撤控制。优势是规则可复算、选股集中且执行约束明确；代价是对固定股池和趋势行情依赖较强。当前固定参考为3/4：三项通过，glmcsm仅因收盘最大回撤超过固定门槛失败；执行账本保持正确。该结果不代表跨行情稳定盈利。
 
 ## 开始使用
 
@@ -30,7 +30,16 @@ python -m gquant backtest --data-dir data --output outputs/interval --interval 2
 python -m gquant validate --data-dir data --output outputs/validation --capital-scan
 ```
 
-`--interval` 仅从完整账户轨迹截取区间，保留此前的持仓、现金和风险状态，不会在区间开始日重置账户。最后一条命令执行四个固定参考条件、完整账户及成交审计、成本与历史诊断、资金规模扫描。
+`--interval`仅从完整模拟账户轨迹截取区间，保留此前持仓、现金和风险状态。当前固定参考为3/4，所以`validate`会完整发布结果并返回退出码1；这不是工程故障。
+
+真实人工账户可在明确风险重置边界后接管，并在之后输入券商实际成交继续状态：
+
+```sh
+python -m gquant account-init --account account.json --as-of 2026-08-28 --risk-reset --data-dir data --output outputs/account
+python -m gquant resume-account --state outputs/account --actual-events actual.json --end 2026-08-31 --data-dir data --output outputs/account-next
+```
+
+这两个命令只保存/核对状态并生成下一交易日人工订单清单，不连接券商、不自动下单。格式与恢复规则见[运行指南](docs/operations.md)。
 
 ## 如何看结果
 

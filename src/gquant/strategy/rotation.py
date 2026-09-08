@@ -68,7 +68,9 @@ def stable_rotation_target(
     rc = cfg["rotation_contract"]
     raw_ranked = list(rf.sort_values(ascending=False).index)
     if not rc["hysteresis"]:
-        return raw_ranked[:n]
+        target = raw_ranked[:n]
+        _upgrade_partial_sells_for_dropped(target, positions, pending_orders)
+        return target
     forced_sells = _forced_exit_symbols(pending_orders)
     ranked = [s for s in raw_ranked if s not in forced_sells]
     target = ranked[:n]

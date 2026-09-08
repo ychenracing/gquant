@@ -22,7 +22,11 @@ def build_panels(bars: dict[str, pd.DataFrame]) -> dict[str, pd.DataFrame]:
 def trading_window(panels: dict[str, pd.DataFrame], start: str, end: str) -> pd.DatetimeIndex:
     """返回回测窗口内的交易日索引 (指标预热在窗口外完成)。"""
     index = panels["close"].index
-    mask = (index >= pd.Timestamp(start)) & (index <= pd.Timestamp(end))
+    requested_end = pd.Timestamp(end)
+    if len(index) == 0 or requested_end > index.max():
+        observed = "none" if len(index) == 0 else str(pd.Timestamp(index.max()).date())
+        raise ValueError(f"requested end exceeds snapshot: requested={end}, observed={observed}")
+    mask = (index >= pd.Timestamp(start)) & (index <= requested_end)
     window = index[mask]
     if len(window) < 30:
         raise ValueError(f"回测窗口交易日不足: {len(window)}")

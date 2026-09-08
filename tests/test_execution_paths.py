@@ -192,3 +192,12 @@ def test_invalid_initial_capital_fails_closed(capital):
     cfg["initial_capital"] = capital
     with pytest.raises(ValueError, match="initial_capital"):
         eng.BacktestEngine(cfg)
+
+
+def test_current_zero_volume_bar_vetoes_fill_without_using_future_volume_for_capacity(market):
+    cfg, bars, _, _, dates, (a, _, _) = market
+    cfg["max_adv_participation"] = 0.08
+    bars[a].loc[65, "volume"] = 1_000_000.0
+    bars[a].loc[66, "volume"] = 0.0
+    result = eng.BacktestEngine(cfg).run()
+    assert not [f for f in result.trades if f.symbol == a and f.date == dates[66]]

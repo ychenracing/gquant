@@ -1,7 +1,6 @@
 {
-  "source_repository": "ychenracing/gquant",
-  "producer_parent_sha": "772e7650e258b9484b7400aab6d092bbce4998a1",
-  "behavior_sha256": "659e99ccc95971cbe751c877280488aa6793a2b6b57422b4d400df7bad5eb261",
+  "source_repository": "ychenracing/trades",
+  "source_commit": "c3d838ce6349f8bdf0ec2988836212563aaa10bc",
   "config_sha256": "21eece4aed7d427b230ec12c0326b0fd96f15795f48462115262c4169c74ed7d",
   "data_manifest_sha256": "d4563e074d149b7bcebb1ec633cff5977b49c66a5352ef9b49ebdf9b0ed30f0d",
   "float_significant_digits": 10,
@@ -75,20 +74,20 @@
       "end": "2026-07-24",
       "initial_capital": 2000000.0,
       "metrics": {
-        "total_return": 14.988816610546785,
-        "ann_return": 5.284730876942338,
-        "max_drawdown": -0.14648342007710924,
-        "sharpe": 3.769538484779685,
-        "calmar": 36.077331305894155,
+        "total_return": 15.26416111204782,
+        "ann_return": 5.356294689743147,
+        "max_drawdown": -0.14178210695573634,
+        "sharpe": 3.789892354172868,
+        "calmar": 37.77835443943117,
         "n_days": 377,
-        "final_equity": 31977633.22109357,
-        "round_trips": 175,
-        "avg_exposure": 0.7047151969923582,
-        "n_fills": 290
+        "final_equity": 32528322.224095643,
+        "round_trips": 173,
+        "avg_exposure": 0.7059190311523805,
+        "n_fills": 285
       },
-      "account_sha256": "9e9c456ee727166fcd7fa18cf7db80c8b24c0410ad1d1beef40f19a476a0f8e8",
-      "fills_sha256": "e8ff7eda57fbf86993bd5ed2643519165aa65679c02e78b0333200163e5b02b8",
-      "events_sha256": "545cc935851687f3d5f7b2145b51d359fd26fd87c7463bdef2de870605a2d109"
+      "account_sha256": "43f1c4cecf6b8f4fdcaf1854e70e4ce0eb1a93def03ba5829ed459102a0f673b",
+      "fills_sha256": "e46e742c8df4c3582f0a31b7b2e481f34d28d785bb764c517289988040189937",
+      "events_sha256": "1eedd56389c5933466be013b96d2b60686407a87639f330e0fe9653508f0ba4f"
     },
     {
       "name": "momentum",
@@ -117,20 +116,20 @@
       "end": "2025-03-31",
       "initial_capital": 2000000.0,
       "metrics": {
-        "total_return": -0.034413134434292725,
-        "ann_return": -0.035675075965587943,
-        "max_drawdown": -0.2322663147124714,
-        "sharpe": 0.08112518000763617,
-        "calmar": -0.15359556554617515,
+        "total_return": -0.1147177614170175,
+        "ann_return": -0.1187369709354571,
+        "max_drawdown": -0.25901335122685043,
+        "sharpe": -0.18522949777554787,
+        "calmar": -0.45842027205564495,
         "n_days": 241,
-        "final_equity": 1931173.7311314147,
-        "round_trips": 111,
-        "avg_exposure": 0.4810085897283386,
-        "n_fills": 213
+        "final_equity": 1770564.477165965,
+        "round_trips": 114,
+        "avg_exposure": 0.45275045436210565,
+        "n_fills": 217
       },
-      "account_sha256": "1dcf1a40c4e8eacc5c0a86094971e3399ff658f645ef43147ae8052ded49373a",
-      "fills_sha256": "257bceb8e59ef0bbe432a229c45a3102b0454214a71d5069c48c56931a3669d6",
-      "events_sha256": "0f7d71cc12bcae4a6631e803975464e5f9300ed54a4e3598758e0874c854c731"
+      "account_sha256": "dc4d0ab256759cc76dc8744e3291f32620043b813cd05ef61b704c5d120b7815",
+      "fills_sha256": "7c4b8f08447cceee89fc8b75a94271f4f96cf101f54a9700ab26d9848174fb48",
+      "events_sha256": "1199af33d446ad8ab4e3d310f28efd195834e5af747eead3b17138a5ab9095eb"
     }
   ]
 }

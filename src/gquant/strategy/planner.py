@@ -36,6 +36,15 @@ class OrderPlanner:
         self.cfg = cfg
         self.last_trim_day: dict[str, pd.Timestamp] = {}
 
+    def export_state(self) -> dict[str, object]:
+        return {"last_trim_day": {k: str(v.date()) for k, v in self.last_trim_day.items()}}
+
+    def restore_state(self, raw: dict[str, object]) -> None:
+        value = raw.get("last_trim_day", {})
+        if not isinstance(value, dict):
+            raise ValueError("invalid planner continuation state")
+        self.last_trim_day = {str(k): pd.Timestamp(v) for k, v in value.items()}
+
     def plan(
         self, ctx: DecisionContext, account: Account, pending_orders: list[Order]
     ) -> list[Order]:

@@ -3,30 +3,39 @@
 from __future__ import annotations
 
 from pathlib import Path
+from typing import Any, cast
 
 import pandas as pd
 
 from gquant.config import Config
-from gquant.execution.simulator import ExecutionSimulator
+from gquant.execution.reconciliation import apply_actual_fills, apply_corporate_actions
 from gquant.infrastructure.configuration import validate_config
 from gquant.infrastructure.data import load_universe
 from gquant.market import indicators as ind_mod
 from gquant.market.panels import build_panels, trading_window
-from gquant.portfolio.models import Account, Order, Result, Session
+from gquant.portfolio.models import Result, Session
 from gquant.portfolio.orders import _merge_sell_orders
 from gquant.risk.exits import vol_target_multiplier
-from gquant.risk.guard import PortfolioGuard
-from gquant.risk.regime import RegimeMachine
-from gquant.strategy.planner import DecisionContext, OrderPlanner
+from gquant.strategy.planner import DecisionContext
 from gquant.strategy.rotation import extended_pair_stop_prices
+
+from .runtime import capture_state, fresh_runtime, restored_runtime
+from .state import EngineState
 
 
 class BacktestEngine:
     def __init__(self, cfg: Config, data_dir: Path | None = None) -> None:
         self.cfg = validate_config(cfg)
         self.data_dir = data_dir
+        self.last_state: EngineState | None = None
 
-    def run(self, admitted_bars: dict[str, pd.DataFrame] | None = None) -> Result:
+    def run(
+        self,
+        admitted_bars: dict[str, pd.DataFrame] | None = None,
+        state: EngineState | None = None,
+        stop_after: str | None = None,
+        actual_events: dict[pd.Timestamp, dict[str, list[dict[str, object]]]] | None = None,
+    ) -> Result:
         cfg = self.cfg
         bars = (
             admitted_bars
@@ -42,52 +51,46 @@ class BacktestEngine:
         ind = ind_mod.compute_indicators(panels, cfg)
         mkt = ind_mod.market_metrics(panels, ind, cfg)
         window = trading_window(panels, cfg["start"], cfg["end"])
-        index = panels["close"].index
-        window_set = set(window)
+        index = pd.DatetimeIndex(panels["close"].index)
+        if stop_after is not None:
+            cutoff = pd.Timestamp(stop_after)
+            if cutoff < window[0] or cutoff > window[-1]:
+                raise ValueError("stop_after must fall inside the configured trading window")
+            window = pd.DatetimeIndex(window[window <= cutoff])
 
-        account = Account(float(cfg["initial_capital"]))
+        runtime = (
+            fresh_runtime(cfg, panels, mkt, index, window[0])
+            if state is None
+            else restored_runtime(cfg, state, index)
+        )
+        if runtime.last_processed_day is not None:
+            window = pd.DatetimeIndex(window[window > runtime.last_processed_day])
+        account, executor, planner = runtime.account, runtime.executor, runtime.planner
+        regime, guard = runtime.regime, runtime.guard
+        pending_orders = runtime.pending_orders
+        pulse_cooldown_left, prev_target_gross = (
+            runtime.pulse_cooldown_left,
+            runtime.prev_target_gross,
+        )
+        equity_hist, corr_flat_until = runtime.equity_hist, runtime.corr_flat_until
+        last_known_close, last_known_volume = runtime.last_known_close, runtime.last_known_volume
+        equity_dates, equity_values = runtime.equity_dates, runtime.equity_values
+        exposure_values, regime_values = runtime.exposure_values, runtime.regime_values
         positions, fills, events = account.positions, account.fills, account.events
-        executor, planner = ExecutionSimulator(cfg), OrderPlanner(cfg)
-
-        regime = RegimeMachine(cfg)
-        guard = PortfolioGuard(cfg)
-        for d in index:
-            if d >= window[0]:
-                break
-            regime.update(d, mkt.loc[d])
-
-        equity_dates: list[pd.Timestamp] = []
-        equity_values: list[float] = []
-        exposure_values: list[float] = []
-        regime_values: list[str] = []
-
-        pending_orders: list[Order] = []
-        pulse_cooldown_left = 0
-        prev_target_gross = 1.0
+        window_set = set(window)
         prev_day_close_row = None
-        equity_hist: list[float] = []
-        corr_flat_until = pd.Timestamp("1900-01-01")
-
-        # 开盘只能使用此前已经观察到的价格/成交量。以窗口前最后一个有效观测暖启动，
-        # 后续每天收盘再更新；禁止在当日开盘成交时读取当天完整 volume。
-        before_window = index[index < window[0]]
-        last_known_close: dict[str, float] = {}
-        last_known_volume: dict[str, float] = {}
-        if len(before_window):
-            close_pre = panels["close"].loc[before_window].ffill().iloc[-1]
-            volume_pre = panels["volume"].loc[before_window].ffill().iloc[-1]
-            last_known_close = {
-                str(s): float(v) for s, v in close_pre.items() if pd.notna(v) and float(v) > 0
-            }
-            last_known_volume = {
-                str(s): float(v) for s, v in volume_pre.items() if pd.notna(v) and float(v) >= 0
-            }
 
         for i, day in enumerate(index):
             if day not in window_set:
                 continue
             prev_day = index[i - 1] if i > 0 else day
 
+            day_events = (actual_events or {}).get(day, {})
+            actions = day_events.get("corporate_actions", [])
+            if actions:
+                runtime.reconciliations.extend(
+                    apply_corporate_actions(account, pending_orders, actions, day)
+                )
             account.open_session()
 
             known_close_row = pd.Series(last_known_close, dtype=float).reindex(
@@ -101,19 +104,32 @@ class BacktestEngine:
             # Snapshot previous-close inventory BEFORE any opening rotation. Selling one
             # name at the open cannot disarm the other name's already preset protection.
             overnight = dict(positions)
-            session = Session(day, panels["open"].loc[day], known_close_row, known_volume_row)
+            session = Session(
+                day,
+                cast(Any, panels["open"].loc[day]),
+                known_close_row,
+                known_volume_row,
+                cast(Any, panels["volume"].loc[day]),
+            )
             pending_orders = _merge_sell_orders(pending_orders, positions)
-            pending_orders = executor.execute_open(account, session, pending_orders)
+            authoritative_fills = day_events.get("fills") if "fills" in day_events else None
+            if authoritative_fills is None:
+                pending_orders = executor.execute_open(account, session, pending_orders)
+            else:
+                pending_orders, records = apply_actual_fills(
+                    account, pending_orders, authoritative_fills, day
+                )
+                runtime.reconciliations.extend(records)
 
             # 前一收盘武装的高相关双龙保护。仅当市场 EWI 已显著高于 MA25 且
             # 两持仓高相关时 setup；次日每只独立触发预置保护价，不看另一只未来路径。
-            if cfg["rotation_contract"]["pair_stop"] and i > 0:
+            if authoritative_fills is None and cfg["rotation_contract"]["pair_stop"] and i > 0:
                 if len(overnight) == 2:
-                    stop_open = panels["open"].loc[day]
-                    stop_low = panels["low"].loc[day]
-                    stop_prev_close = panels["close"].loc[prev_day]
-                    prev_mkt = mkt.loc[prev_day]
-                    prev_market_ext = (
+                    stop_open = cast(Any, panels["open"].loc[day])
+                    stop_low = cast(Any, panels["low"].loc[day])
+                    stop_prev_close = cast(Any, panels["close"].loc[prev_day])
+                    prev_mkt = cast(Any, mkt.loc[prev_day])
+                    prev_market_ext = float(
                         prev_mkt["ewi"] / prev_mkt["ewi_ma_regime"] - 1.0
                         if pd.notna(prev_mkt["ewi_ma_regime"])
                         and float(prev_mkt["ewi_ma_regime"]) > 0
@@ -135,7 +151,7 @@ class BacktestEngine:
 
             # 2) 收盘估值。停牌/缺价持仓使用最近一个有效收盘价做 mark，
             # 但仍保持不可交易；禁止 NaN 净值后再由 metrics.dropna 静默隐藏。
-            close_row = panels["close"].loc[day]
+            close_row = cast(Any, panels["close"].loc[day])
             mark_prices: dict[str, float] = {}
             for symbol in positions:
                 c = close_row.get(symbol)
@@ -154,10 +170,10 @@ class BacktestEngine:
                     p.peak_close = max(p.peak_close, float(c))
 
             # 3) 状态与组合敞口。
-            state = regime.update(day, mkt.loc[day])
+            regime_state = regime.update(day, cast(Any, mkt.loc[day]))
             if day < corr_flat_until:
                 regime.state = "CRASH"
-                state = "CRASH"
+                regime_state = "CRASH"
 
             if prev_day_close_row is not None:
                 core_list = [s for s in cfg["core_universe"] if s in close_row.index]
@@ -165,7 +181,7 @@ class BacktestEngine:
                 n_corr = int((core_rets <= cfg["corr_sell_pct"]).sum())
                 if n_corr >= cfg["corr_liquidation_count"]:
                     regime.state = "CRASH"
-                    state = "CRASH"
+                    regime_state = "CRASH"
                     corr_flat_until = day + pd.Timedelta(days=cfg["corr_flat_days"])
                     events.append(
                         f"{day.date()} 龙头相关性抛售清仓 n={n_corr}, "
@@ -173,8 +189,8 @@ class BacktestEngine:
                     )
 
             regime_cap = regime.exposure_cap()
-            mkt_row = mkt.loc[day]
-            ewi_ext = mkt_row["ewi"] / mkt_row["ewi_ma_regime"] - 1.0
+            mkt_row = cast(Any, mkt.loc[day])
+            ewi_ext = float(mkt_row["ewi"] / mkt_row["ewi_ma_regime"] - 1.0)
             ewi_close = mkt["ewi"].loc[:day]
             ret2 = (
                 ewi_close.iloc[-1] / ewi_close.iloc[-3] - 1.0
@@ -193,10 +209,10 @@ class BacktestEngine:
                     f"{day.date()} 涨幅衰竭预警 2日={ret2:+.1%} "
                     f"乖离={ewi_ext:+.1%}, 敞口上限{regime_cap:.0%}"
                 )
-            if state == "CRASH" and regime_values and regime_values[-1] != "CRASH":
+            if regime_state == "CRASH" and regime_values and regime_values[-1] != "CRASH":
                 events.append(
-                    f"{day.date()} 状态机进入CRASH(宽度={mkt.loc[day]['breadth']:.0%}, "
-                    f"EWI5日={mkt.loc[day]['ewi_ret5']:+.1%}), 次日清仓"
+                    f"{day.date()} 状态机进入CRASH(宽度={mkt_row['breadth']:.0%}, "
+                    f"EWI5日={mkt_row['ewi_ret5']:+.1%}), 次日清仓"
                 )
 
             ewi_series = mkt["ewi"]
@@ -208,7 +224,7 @@ class BacktestEngine:
                 and mkt_row["ewi_ret5"] > 0
             )
             target_gross = guard.record_equity(
-                day, equity, regime_cap, state, market_heal=market_heal
+                day, equity, regime_cap, regime_state, market_heal=market_heal
             )
 
             if cfg["vol_target_daily"] > 0:
@@ -242,7 +258,7 @@ class BacktestEngine:
             pending_orders = planner.plan(
                 DecisionContext(
                     day,
-                    state,
+                    regime_state,
                     target_gross,
                     prev_target_gross,
                     equity,
@@ -257,13 +273,13 @@ class BacktestEngine:
             )
 
             # 当前收盘完成后，价格/成交量才成为下一交易日可用信息。
-            for symbol, value in close_row.items():
+            for key, value in close_row.items():
                 if pd.notna(value) and float(value) > 0:
-                    last_known_close[symbol] = float(value)
-            volume_close_row = panels["volume"].loc[day]
-            for symbol, value in volume_close_row.items():
+                    last_known_close[str(key)] = float(value)
+            volume_close_row = cast(Any, panels["volume"].loc[day])
+            for key, value in volume_close_row.items():
                 if pd.notna(value) and float(value) >= 0:
-                    last_known_volume[symbol] = float(value)
+                    last_known_volume[str(key)] = float(value)
 
             prev_target_gross = target_gross
             prev_day_close_row = pd.Series(last_known_close, dtype=float).reindex(close_row.index)
@@ -274,8 +290,20 @@ class BacktestEngine:
                 if equity > 0
                 else 0.0
             )
-            regime_values.append(state)
+            regime_values.append(regime_state)
 
+        runtime.pending_orders = pending_orders
+        runtime.pulse_cooldown_left = pulse_cooldown_left
+        runtime.prev_target_gross = prev_target_gross
+        runtime.equity_hist = equity_hist
+        runtime.corr_flat_until = corr_flat_until
+        runtime.last_known_close = last_known_close
+        runtime.last_known_volume = last_known_volume
+        runtime.equity_dates = equity_dates
+        runtime.equity_values = equity_values
+        runtime.exposure_values = exposure_values
+        runtime.regime_values = regime_values
+        self.last_state = capture_state(runtime)
         equity_curve = pd.Series(equity_values, index=equity_dates, name="equity")
         drawdown = equity_curve / equity_curve.cummax() - 1.0
         return Result(

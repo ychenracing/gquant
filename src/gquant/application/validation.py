@@ -16,6 +16,7 @@ from gquant.market.panels import build_panels
 from gquant.portfolio.models import Result
 from gquant.research.audit import has_violations, ledger_audit
 from gquant.research.comparison import continuous_interval, judge
+from gquant.research.robustness import diagnostic_configs, profit_concentration
 from gquant.research.targets import BASELINES, CAPITALS, DIAGNOSTIC, Reference
 
 from .engine import BacktestEngine
@@ -30,7 +31,9 @@ class Evaluator:
         self.data_dir = data_dir
         self.cache: dict[str, tuple[Result, dict[str, Any], dict[str, Any]]] = {}
         self.bars = {symbol: snapshot.bars[symbol] for symbol in cfg["universe"]}
-        self.volume = build_panels(self.bars)["volume"]
+        panels = build_panels(self.bars)
+        self.volume = panels["volume"]
+        self.close = panels["close"]
 
     def evaluate(self, cfg: Config) -> tuple[Result, dict[str, Any], dict[str, Any]]:
         key = json.dumps(cfg, sort_keys=True)
@@ -84,6 +87,7 @@ def validate_economics(
         "formal_configuration": equivalent_default,
         "label": "frozen_standard_acceptance" if equivalent_default else "configuration_diagnostic",
         "all_reference_gates_pass": all(row["pass"] for row in rows),
+        "reference_pass_count": sum(bool(row["pass"]) for row in rows),
         "execution_correct": not has_violations(audits),
         "references": rows,
         "full_window": full_metrics,
@@ -110,6 +114,22 @@ def validate_economics(
             "execution_ledger": historical_audit,
         }
         report["cost_sensitivity"] = cost_rows
+        report["profit_concentration"] = profit_concentration(full, cfg, evaluator.close)
+        robustness = []
+        for label, diagnostic_cfg in diagnostic_configs(cfg):
+            _, diagnostic_metrics, diagnostic_audit = evaluator.evaluate(diagnostic_cfg)
+            robustness.append(
+                {
+                    "case": label,
+                    "metrics": diagnostic_metrics,
+                    "execution_ledger": diagnostic_audit,
+                    "delta_total_return": diagnostic_metrics["total_return"]
+                    - full_metrics["total_return"],
+                    "delta_max_drawdown": diagnostic_metrics["max_drawdown"]
+                    - full_metrics["max_drawdown"],
+                }
+            )
+        report["robustness_diagnostics"] = robustness
     if capital_scan:
         capital_rows = [
             evaluator.reference(ref, capital=capital) for ref in BASELINES for capital in CAPITALS

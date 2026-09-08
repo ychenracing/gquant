@@ -22,6 +22,16 @@ def digest(value):
 
 
 def test_configuration_and_data_identity_are_frozen():
+    assert ORACLE["source_repository"] == "ychenracing/gquant"
+    assert ORACLE["producer_parent_sha"] == "772e7650e258b9484b7400aab6d092bbce4998a1"
+    hasher = hashlib.sha256()
+    for path in sorted((ROOT / "src/gquant").rglob("*.py")):
+        relative = str(path.relative_to(ROOT)).replace("\\", "/")
+        hasher.update(relative.encode())
+        hasher.update(b"\0")
+        hasher.update(path.read_bytes())
+        hasher.update(b"\0")
+    assert ORACLE["behavior_sha256"] == hasher.hexdigest()
     assert digest(CONFIG) == ORACLE["config_sha256"]
     assert (
         hashlib.sha256((ROOT / "data/SHA256SUMS").read_bytes()).hexdigest()

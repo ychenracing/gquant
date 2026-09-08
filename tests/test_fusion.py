@@ -61,6 +61,12 @@ def test_trading_window_bounds(panels):
     assert len(window) > 300
 
 
+def test_trading_window_rejects_requested_end_after_snapshot(panels):
+    requested = (panels["close"].index.max() + pd.Timedelta(days=3)).date().isoformat()
+    with pytest.raises(ValueError, match="requested end exceeds snapshot"):
+        trading_window(panels, "2025-04-01", requested)
+
+
 # ---------- 指标层 (无未来函数) ----------
 
 

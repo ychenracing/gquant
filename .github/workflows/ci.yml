@@ -76,7 +76,7 @@ jobs:
           if-no-files-found: error
 
   economics:
-    name: Frozen economic and execution contracts
+    name: Frozen economic paths, execution correctness and disclosed reference state
     runs-on: ubuntu-latest
     timeout-minutes: 35
     steps:
@@ -102,9 +102,14 @@ jobs:
           python -m pip freeze > outputs/economics/environment.txt
       - name: Unchanged configuration, data and full account traces
         run: python -m pytest -q tests/test_economic_oracle.py tests/test_economic_sequences.py --junitxml=outputs/economics/oracles.xml
-      - name: Fixed reference acceptance and disclosed diagnostics
-        run: python -m gquant validate --data-dir data --output outputs/economics/acceptance --capital-scan
-      - name: Check published identity and original participation constraint
+      - name: Fixed references and disclosed diagnostics
+        run: |
+          set +e
+          python -m gquant validate --data-dir data --output outputs/economics/acceptance --capital-scan
+          status=$?
+          set -e
+          test "$status" -eq 1
+      - name: Check published identity, execution correctness and exact reference state
         run: |
           python - <<'PY'
           import os
@@ -113,11 +118,25 @@ jobs:
           report = read_latest(Path('outputs/economics/acceptance'))['validation.json']
           assert report['identity']['ci_revision'] == os.environ['GQUANT_SOURCE_REVISION']
           assert report['identity']['config']['max_adv_participation'] == 0.08
-          assert report['accepted'] and report['all_evaluated_ledgers_correct']
-          assert len(report['references']) == 4
+          assert report['formal_configuration'] is True
+          assert report['accepted'] is False
+          assert report['all_reference_gates_pass'] is False
+          assert report['reference_pass_count'] == 3
+          assert report['execution_correct'] is True
+          assert report['all_evaluated_ledgers_correct'] is True
+          rows = {row['key']: row for row in report['references']}
+          assert set(rows) == {'turtle_5', 'track_trend_b', 'glmcsm_6', 'momentum'}
+          assert all(rows[key]['pass'] for key in ('turtle_5', 'track_trend_b', 'momentum'))
+          assert rows['glmcsm_6']['pass'] is False
+          assert rows['glmcsm_6']['verdict'] == {
+              'return': True, 'drawdown': False, 'sharpe': True
+          }
           assert report['continuous_interval']['account_reset'] is False
           assert report['capital_scan']['count'] == 24
+          assert report['capital_scan']['pass_count'] == 15
           assert report['historical_diagnostic']['clean_out_of_sample'] is False
+          assert len(report['robustness_diagnostics']) == 11
+          assert report['profit_concentration']['optical_chain_proxy_profit_share'] > 0.99
           PY
           git diff --exit-code
       - uses: actions/upload-artifact@ea165f8d65b6e75b540449e92b4886f43607fa02
