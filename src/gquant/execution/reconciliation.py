@@ -69,7 +69,7 @@ def apply_actual_fills(
             raise ValueError(f"unplanned actual fill: {symbol} {side}")
         shares = _shares(raw.get("shares"), "actual fill shares")
         price = _number(raw.get("price"), "actual fill price")
-        fees = _number(raw.get("fees", 0.0), "actual fill fees", nonnegative=True)
+        fees = _number(raw.get("fees"), "actual fill fees", nonnegative=True)
         if price <= 0:
             raise ValueError("actual fill price must be positive")
         if actual[key] + shares > planned[key]:
