@@ -31,6 +31,7 @@ def test_profit_concentration_reconciles_cash_flows_and_terminal_mark() -> None:
     cfg["initial_capital"] = 1000.0
     day1 = pd.Timestamp("2026-08-27")
     day2 = pd.Timestamp("2026-08-28")
+    future = pd.Timestamp("2026-08-31")
     buy_value = 100 * 10.0
     sell_value = 50 * 12.0
     pnl = (
@@ -53,7 +54,8 @@ def test_profit_concentration_reconciles_cash_flows_and_terminal_mark() -> None:
         final_equity=1000.0 + pnl,
         events=[],
     )
-    close = pd.DataFrame({"sz300308": [10.0, 15.0]}, index=[day1, day2])
+    # A price observed after the replay ends must never be used as the terminal mark.
+    close = pd.DataFrame({"sz300308": [10.0, 15.0, 1000.0]}, index=[day1, day2, future])
     report = profit_concentration(result, cfg, close)
     assert report["counterfactual"] is False
     assert report["attributed_profit"] == pytest.approx(pnl)
