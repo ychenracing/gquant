@@ -15,6 +15,7 @@ concurrency:
 # Temporary recovery workflow. It deterministically regenerates the active 24-case
 # digest fixture from preserved case requests. It first proves the six existing
 # economic trajectories are unchanged before refreshing source identity.
+# Final source trigger: 2026-09-08 account-continuity closeout.
 jobs:
   rebuild:
     runs-on: windows-2025
