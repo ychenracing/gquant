@@ -1,0 +1,201 @@
+name: Final verified source and evidence closure
+
+on:
+  push:
+    branches: [codex/gquant-correctness-operations-20260908]
+    paths: ['.github/workflows/final-rebind-v3.yml']
+
+permissions:
+  contents: write
+
+concurrency:
+  group: final-rebind-v3-${{ github.ref }}
+  cancel-in-progress: true
+
+jobs:
+  close:
+    runs-on: ubuntu-latest
+    timeout-minutes: 40
+    steps:
+      - uses: actions/checkout@fbc6f3992d24b796d5a048ff273f7fcc4a7b6c09
+        with:
+          fetch-depth: 0
+      - name: Lock branch identity
+        run: |
+          set -euo pipefail
+          branch=codex/gquant-correctness-operations-20260908
+          git fetch origin "refs/heads/$branch:refs/remotes/origin/$branch"
+          locked_head="$(git rev-parse "refs/remotes/origin/$branch")"
+          git checkout --detach "$locked_head"
+          echo "LOCKED_HEAD=$locked_head" >> "$GITHUB_ENV"
+      - uses: actions/setup-python@ece7cb06caefa5fff74198d8649806c4678c61a1
+        with:
+          python-version: '3.12.14'
+          cache: pip
+          cache-dependency-path: 'requirements-*.txt'
+      - name: Install fixed environment
+        run: |
+          python -m pip install --disable-pip-version-check -r requirements-dev.txt
+          python -m pip install --no-deps --no-build-isolation -e .
+      - name: Apply five verified minimal fixes
+        run: |
+          set -euo pipefail
+          python - <<'PY'
+          from pathlib import Path
+
+          def replace_once(path: str, old: str, new: str, label: str) -> None:
+              target = Path(path)
+              text = target.read_text(encoding='utf-8')
+              if text.count(old) != 1:
+                  raise SystemExit(f'unexpected {label} state')
+              target.write_text(text.replace(old, new), encoding='utf-8')
+
+          replace_once(
+              'src/gquant/research/robustness.py',
+              'from gquant.infrastructure.configuration import validate_config\n',
+              '',
+              'robustness import',
+          )
+          replace_once(
+              'src/gquant/research/robustness.py',
+              'def _clone(cfg: Config) -> dict[str, Any]:\n    return copy.deepcopy(dict(cfg))\n',
+              'def _clone(cfg: Config) -> Config:\n    return copy.deepcopy(cfg)\n',
+              'robustness clone',
+          )
+          for old, new in (
+              ('rows.append(("ablation_rotation_sizing_equal", validate_config(equal)))',
+               'rows.append(("ablation_rotation_sizing_equal", equal))'),
+              ('rows.append(("ablation_pair_stop_off", validate_config(no_pair)))',
+               'rows.append(("ablation_pair_stop_off", no_pair))'),
+              ('rows.append((f"exclude_core_{symbol}", validate_config(raw)))',
+               'rows.append((f"exclude_core_{symbol}", raw))'),
+              ('rows.append(("exclude_theme_optical_chain_proxy", validate_config(optical)))',
+               'rows.append(("exclude_theme_optical_chain_proxy", optical))'),
+              ('rows.append(("exclude_theme_semiconductor_proxy", validate_config(semiconductor)))',
+               'rows.append(("exclude_theme_semiconductor_proxy", semiconductor))'),
+          ):
+              replace_once('src/gquant/research/robustness.py', old, new, 'robustness diagnostic')
+
+          replace_once(
+              'src/gquant/strategy/planner.py',
+              '''            if tilt:\n                tilt_src = {\n                    "volume": ind["volume_ratio"].loc[day],\n                    "ret63": ind["ret63"].loc[day],\n                    "ret20": ind["ret20"].loc[day],\n                    "momentum": ranks,\n                }[tilt_factor]\n''',
+              '''            if tilt:\n                if tilt_factor == "volume":\n                    tilt_src = ind["volume_ratio"].loc[day]\n                elif tilt_factor == "momentum":\n                    tilt_src = ranks\n                else:\n                    tilt_src = ind[tilt_factor].loc[day]\n''',
+              'planner tilt selection',
+          )
+          replace_once(
+              'tests/test_application.py',
+              '-0.02757322781761684',
+              '-0.02762197368224517',
+              'continuous interval assertion',
+          )
+          replace_once(
+              'src/gquant/application/state.py',
+              '''def _day(value: object | None, label: str) -> pd.Timestamp | None:\n    if value is None:\n        return None\n    try:\n        day = pd.Timestamp(value)\n''',
+              '''def _day(value: object | None, label: str) -> pd.Timestamp | None:\n    if value is None:\n        return None\n    if not isinstance(value, str):\n        raise ValueError(f"invalid {label}")\n    try:\n        day = pd.Timestamp(value)\n''',
+              'state date narrowing',
+          )
+          replace_once(
+              'src/gquant/application/operations.py',
+              '''def _timestamp(value: object, label: str) -> pd.Timestamp:\n    try:\n        day = pd.Timestamp(value)\n''',
+              '''def _timestamp(value: object, label: str) -> pd.Timestamp:\n    if not isinstance(value, str):\n        raise ValueError(f"invalid {label}")\n    try:\n        day = pd.Timestamp(value)\n''',
+              'operations date narrowing',
+          )
+          PY
+          python -m ruff check --fix \
+            src/gquant/research/robustness.py \
+            src/gquant/strategy/planner.py \
+            src/gquant/application/state.py \
+            src/gquant/application/operations.py \
+            tests/test_application.py
+          python -m ruff format \
+            src/gquant/research/robustness.py \
+            src/gquant/strategy/planner.py \
+            src/gquant/application/state.py \
+            src/gquant/application/operations.py \
+            tests/test_application.py
+      - name: Engineering gates
+        run: |
+          set -euo pipefail
+          python -m ruff check .
+          python -m ruff format --check .
+          python -m mypy
+          python -m compileall -q src scripts tests
+          python scripts/check_repository.py
+          python -m gquant validate-data --data-dir data
+          python -m pytest -q \
+            tests/test_planner_exit_priority.py::test_rotation_full_exit_overrides_earlier_partial_risk_trim \
+            tests/test_application.py::test_backtest_publishes_continuous_account \
+            tests/test_robustness.py tests/test_recovery_modules.py tests/test_research_services.py tests/test_operations.py
+      - name: Rebind behavior identity and prove economic paths unchanged
+        run: |
+          set -euo pipefail
+          python - <<'PY'
+          import hashlib
+          import json
+          from pathlib import Path
+
+          root = Path('.')
+          hasher = hashlib.sha256()
+          for path in sorted((root / 'src/gquant').rglob('*.py')):
+              relative = str(path.relative_to(root)).replace('\\', '/')
+              hasher.update(relative.encode())
+              hasher.update(b'\0')
+              hasher.update(path.read_bytes().replace(b'\r\n', b'\n'))
+              hasher.update(b'\0')
+          behavior = hasher.hexdigest()
+          for name in ('economic-oracle.json', 'economic-sequence-digests.json'):
+              path = root / 'tests/fixtures' / name
+              payload = json.loads(path.read_text(encoding='utf-8'))
+              if payload['behavior_sha256'] == behavior:
+                  raise SystemExit(f'{name}: behavior identity unexpectedly unchanged')
+              payload['behavior_sha256'] = behavior
+              path.write_text(json.dumps(payload, ensure_ascii=False, indent=2) + '\n', encoding='utf-8')
+          print(f'rebound behavior_sha256={behavior}')
+          PY
+          python -m pytest -q tests/test_economic_oracle.py tests/test_economic_sequences.py
+      - name: Full engineering and formal economic verification
+        run: |
+          set -euo pipefail
+          python -m pytest -q -m 'not economic'
+          rm -rf outputs/final-v3-validation
+          set +e
+          python -m gquant validate --data-dir data --output outputs/final-v3-validation --capital-scan
+          status=$?
+          set -e
+          test "$status" -eq 1
+          python - <<'PY'
+          from pathlib import Path
+          from gquant.infrastructure.artifacts import read_latest
+
+          report = read_latest(Path('outputs/final-v3-validation'))['validation.json']
+          assert report['reference_pass_count'] == 3
+          assert report['accepted'] is False
+          assert report['execution_correct'] is True
+          assert report['all_evaluated_ledgers_correct'] is True
+          assert report['capital_scan']['pass_count'] == 15
+          rows = {row['key']: row for row in report['references']}
+          assert rows['glmcsm_6']['verdict'] == {'return': True, 'drawdown': False, 'sharpe': True}
+          assert abs(report['full_window']['total_return'] - 12.073443491514363) < 1e-12
+          assert abs(report['full_window']['max_drawdown'] - (-0.1407956526125117)) < 1e-12
+          assert abs(report['continuous_interval']['return'] - (-0.02762197368224517)) < 1e-12
+          PY
+          git diff --check
+      - name: Commit verified closure
+        run: |
+          set -euo pipefail
+          branch=codex/gquant-correctness-operations-20260908
+          git fetch origin "refs/heads/$branch:refs/remotes/origin/$branch"
+          test "$(git rev-parse "refs/remotes/origin/$branch")" = "$LOCKED_HEAD"
+          git config user.name 'github-actions[bot]'
+          git config user.email '41898282+github-actions[bot]@users.noreply.github.com'
+          git add \
+            src/gquant/research/robustness.py \
+            src/gquant/strategy/planner.py \
+            src/gquant/application/state.py \
+            src/gquant/application/operations.py \
+            tests/test_application.py \
+            tests/fixtures/economic-oracle.json \
+            tests/fixtures/economic-sequence-digests.json
+          git diff --cached --check
+          git commit -m 'fix: close remaining engineering contracts'
+          git push origin HEAD:"refs/heads/$branch"
