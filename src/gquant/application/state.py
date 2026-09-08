@@ -2,6 +2,7 @@
 
 from __future__ import annotations
 
+import re
 from dataclasses import dataclass, field
 from typing import Any
 
@@ -46,6 +47,7 @@ class EngineState:
     equity_values: list[float]
     exposure_values: list[float]
     regime_values: list[str]
+    data_prefix_sha256: str | None = None
     reset_boundary: dict[str, object] | None = None
     reconciliations: list[dict[str, object]] = field(default_factory=list)
 
@@ -104,6 +106,7 @@ class EngineState:
             "equity_values": list(self.equity_values),
             "exposure_values": list(self.exposure_values),
             "regime_values": list(self.regime_values),
+            "data_prefix_sha256": self.data_prefix_sha256,
             "reset_boundary": dict(self.reset_boundary) if self.reset_boundary is not None else None,
             "reconciliations": [dict(item) for item in self.reconciliations],
         }
@@ -200,6 +203,11 @@ class EngineState:
         if equity_dates and last_processed_day != equity_dates[-1]:
             raise ValueError("continuation history does not end at last_processed_day")
 
+        prefix_raw = raw.get("data_prefix_sha256")
+        if prefix_raw is not None and (
+            not isinstance(prefix_raw, str) or re.fullmatch(r"[0-9a-f]{64}", prefix_raw) is None
+        ):
+            raise ValueError("invalid continuation data prefix identity")
         reset_raw = raw.get("reset_boundary")
         reset_boundary = None if reset_raw is None else _mapping(reset_raw, "reset boundary")
         reconciliations_raw = raw.get("reconciliations", [])
@@ -231,6 +239,7 @@ class EngineState:
             equity_values=equity_values,
             exposure_values=exposure_values,
             regime_values=regime_values,
+            data_prefix_sha256=prefix_raw,
             reset_boundary=reset_boundary,
             reconciliations=[dict(item) for item in reconciliations_raw],
         )
