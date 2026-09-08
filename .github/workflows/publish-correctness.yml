@@ -9,18 +9,18 @@ permissions:
   contents: write
 
 concurrency:
-  group: publish-gquant-correctness-macos-v4
+  group: publish-gquant-correctness-recovery-v1
   cancel-in-progress: false
 
 jobs:
   publish:
-    runs-on: macos-latest
+    runs-on: ubuntu-latest
     timeout-minutes: 10
     steps:
       - uses: actions/checkout@11bd71901bbe5b1630ceea73d27597364c9af683
         with:
           fetch-depth: 0
-      - name: Reconstruct exact reviewed candidate
+      - name: Reconstruct exact recoverable baseline
         shell: bash
         run: |
           set -euo pipefail
@@ -55,13 +55,13 @@ jobs:
           git add -A
           git diff --cached --check
           actual_tree="$(git write-tree)"
-          echo "candidate_tree=$actual_tree"
-          test "$actual_tree" = 9667ae28199295612cc8f71f975daf35a0a7e0b7
-      - name: Commit and push final candidate
+          echo "recovery_tree=$actual_tree"
+          test "$actual_tree" = fd2a2e7f609d8be2b3b7b68d602cc962adf5e195
+      - name: Commit and push recoverable baseline
         shell: bash
         run: |
           set -euo pipefail
           git config user.name 'github-actions[bot]'
           git config user.email '41898282+github-actions[bot]@users.noreply.github.com'
-          git commit -m 'fix: close execution correctness and account continuity'
+          git commit -m 'fix: restore recoverable correctness baseline'
           git push origin HEAD:refs/heads/codex/gquant-correctness-operations-20260908
