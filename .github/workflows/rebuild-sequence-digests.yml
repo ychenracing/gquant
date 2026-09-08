@@ -18,15 +18,9 @@ concurrency:
 # Final source trigger: 2026-09-08 account-continuity closeout.
 jobs:
   rebuild:
-    runs-on: windows-2025
+    runs-on: ubuntu-latest
     timeout-minutes: 35
-    defaults:
-      run:
-        shell: bash
     steps:
-      - name: Preserve repository line endings
-        shell: pwsh
-        run: git config --global core.autocrlf false
       - uses: actions/checkout@11bd71901bbe5b1630ceea73d27597364c9af683
         with:
           fetch-depth: 0
