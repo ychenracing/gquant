@@ -11,10 +11,7 @@ import pytest
 from gquant.application.operations import parse_actual_events
 from gquant.application.state import EngineState
 from gquant.config import CONFIG
-from gquant.execution.reconciliation import (
-    apply_actual_fills,
-    apply_corporate_actions,
-)
+from gquant.execution.reconciliation import apply_actual_fills, apply_corporate_actions
 from gquant.portfolio.accounting import trade_cost
 from gquant.portfolio.models import Account, Fill, Position
 from gquant.research.robustness import diagnostic_configs
