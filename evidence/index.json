@@ -1,0 +1,29 @@
+{
+  "files": [
+    {
+      "path": "raw/capital-sweep-scorecard.json",
+      "sha256": "a705cc2f6cc2c6c1968d1e0944a86aa91c6935597343bb4898e5284f1cd3386b",
+      "use": "retained evidence; not current acceptance"
+    },
+    {
+      "path": "raw/economic-correctness.json",
+      "sha256": "5f84fc5dbd60cb656dd6806d92144e7af67a97cf5449c3be8f68af14546d1e84",
+      "use": "retained evidence; not current acceptance"
+    },
+    {
+      "path": "raw/final-scorecard.json",
+      "sha256": "6ddfc3f739874deec560317e6f7961b16f9bf7732b73cfe4b10bf2892d552db0",
+      "use": "retained evidence; not current acceptance"
+    },
+    {
+      "path": "raw/historical-8pct-failure.txt",
+      "sha256": "40e4901970704722430de78a78e25e81b39f110c6cd0c70bce444d5f45792424",
+      "use": "retained evidence; not current acceptance"
+    },
+    {
+      "path": "raw/historical-9c00ff47-8pct.json",
+      "sha256": "4f44f766ded1bd9c5641f88fa634c742758be239a558b557b8c7d12311adc266",
+      "use": "retained evidence; not current acceptance"
+    }
+  ]
+}

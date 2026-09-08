@@ -1,17 +1,18 @@
-"""Production contract for the gquant default strategy path.
+"""Contract for the default strategy path.
 
 The contract is deliberately small:
-- keep gquant's native selection simple: ret63 -> top-2 -> daily rotation;
+- keep selection simple: ret63 -> top-2 -> daily rotation;
 - use the already-implemented Turtle-style ATR risk budget by default.
 """
+
 from __future__ import annotations
 
 import pytest
 
-from fusion.config import CONFIG
+from gquant.config import CONFIG
 
 
-def test_production_selection_stays_simple_and_gquant_native():
+def test_production_selection_stays_simple_and_native():
     """Do not import another strategy's parameter surface into production selection."""
     assert CONFIG["rebalance_mode"] == "daily_rotation"
     assert CONFIG["rank_factor"] == "ret63"
@@ -24,6 +25,7 @@ def test_production_uses_turtle_style_atr_risk_budget():
     assert CONFIG["rotation_sizing"] == "atr_risk_budget"
     assert CONFIG["rotation_risk_pct"] == pytest.approx(0.045)
     assert CONFIG["rotation_atr_floor_pct"] == pytest.approx(0.02)
+
 
 def test_production_pair_stop_uses_market_overheat_setup_and_weaken_cap():
     rc = CONFIG["rotation_contract"]

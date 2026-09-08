@@ -1,0 +1,47 @@
+[build-system]
+requires = ["setuptools==82.0.1", "wheel==0.45.1"]
+build-backend = "setuptools.build_meta"
+
+[project]
+name = "gquant"
+version = "1.0.0"
+description = "Daily-bar quantitative research and manual decision support"
+readme = "README.md"
+requires-python = ">=3.12,<3.14"
+license = "MIT"
+dependencies = ["numpy==2.2.6", "pandas==2.2.3"]
+
+[project.scripts]
+gquant = "gquant.cli:main"
+
+[tool.setuptools.packages.find]
+where = ["src"]
+
+[tool.setuptools.package-data]
+gquant = ["py.typed"]
+
+[tool.pytest.ini_options]
+testpaths = ["tests"]
+pythonpath = ["src"]
+addopts = "--strict-markers --strict-config"
+markers = ["economic: complete frozen-data economic regression"]
+
+[tool.ruff]
+line-length = 100
+target-version = "py312"
+
+[tool.ruff.lint]
+select = ["E4", "E7", "E9", "F", "I", "UP", "B"]
+
+[tool.mypy]
+python_version = "3.12"
+strict = true
+files = ["src/gquant", "scripts"]
+
+[tool.coverage.run]
+branch = true
+source = ["gquant"]
+
+[tool.coverage.report]
+show_missing = true
+fail_under = 85

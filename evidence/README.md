@@ -1,55 +1,7 @@
-# Evidence identities and acceptance boundaries
+# 原始证据
 
-## Current acceptance
+`raw/` 保存未重新计算或改写的研究文件；`index.json` 固定每个文件的SHA256。它们包括失败结果和关闭成交参与率限制后的诊断，不是当前默认配置的验收报告。文件中的源提交、运行标识和参数属于证据身份，不是可调整的文档文案。
 
-`fusion/config.py` defaults to **0.08**, never no-cap. `gquant-verify` records the exact
-checked-out HEAD, Python/dependency versions, source archive, config, frozen data hashes,
-and target hash. Its engineering and economics jobs are separate. The economic job
-requires the four frozen-reference gates at 8% and the actual-fill/account audit.
-Capital scans and increased-cost failures are explicitly diagnostic, not silently waived
-formal requirements. PR checks and downloaded artifacts are the status authority; a source
-commit or a generator's green status is not a final-HEAD check.
+当前结果由 `python -m gquant validate --data-dir data --output outputs/validation --capital-scan` 生成；阅读其完整代次与identity，不根据原始文件名中的final或scorecard推断通过状态。
 
-Current CI outputs are `gquant-scorecard.json` (four reference windows and the historical
-diagnostic window) and `gquant-correctness.json` (continuous accounts, all four ledgers and
-cost sensitivity). New scorecard rows identify the strategy under the `gquant` field.
-Capital scans and no-cap diagnostics can be run explicitly into new output paths; the
-naming checks do not claim these optional scans have been rerun. Sealed JSON files below
-retain their original bytes, field names and provenance and are not current report APIs.
-
-## Historical failures: retain, never relabel as passed
-
-- Original failure: run **34124222214**, job **101748980438**, source
-  **3a7a264212dbd1d0e2a2978cb51bee962ded9fa5**; 72 tests passed but **8% 0/4**.
-  See `historical-8pct-failure.md`, copied unchanged from the handoff.
-- Reproduced on **9c00ff47e8958268fb54d465ae95104c6d14bef3**, run **34130569737**:
-  engineering job **101769422060** passed, economic job **101769422567** failed.
-  `historical-9c00ff47-8pct.json` preserves the result bytes. This source is 1769cde plus
-  read-only CI only, before the newly found Shanghai-mainboard unit repair.
-- The later unit finding explains a defect in those candidates; it does not retroactively
-  turn their failed evidence into accepted evidence. See `../data/VOLUME_UNIT_AUDIT.md`.
-
-## Historical no-cap artifacts, not current defaults
-
-The three existing root JSON files below belong to **1769cde150831f9602faf13f666add7c9fd9962c**
-and **max_adv_participation=0.0**. Their contents are preserved, not promoted to 8% evidence.
-The generator run **34125227751** started on **a1b1400a69e9d4734a9ac6b94e215b593ddb53d3**;
-1769cde originally had zero check-runs. No specific user approval for disabling the cap was
-recovered. Current work restores 8%, so no new no-cap approval is assumed or needed.
-
-| Historical file | SHA256 |
-|---|---|
-| `../final-scorecard.json` | `6ddfc3f739874deec560317e6f7961b16f9bf7732b73cfe4b10bf2892d552db0` |
-| `../capital-sweep-scorecard.json` | `a705cc2f6cc2c6c1968d1e0944a86aa91c6935597343bb4898e5284f1cd3386b` |
-| `../economic-correctness.json` | `5f84fc5dbd60cb656dd6806d92144e7af67a97cf5449c3be8f68af14546d1e84` |
-
-Old no-cap scorecard: **4/4**; capital scan: **23/24**, with glmcsm at 1m failing.
-Old no-cap diagnostic window: return **-2.744774859339183%**, MDD **-21.87280481381123%**.
-Old no-cap continuous 2026-06-20..08-30: return **-2.757322781761684%**, MDD
-**-9.508492076600927%**, anchor June 18, actual June 22..August 28. These retain their own
-identity even where corrected 8% outputs happen to have the same numbers.
-
-All target windows have been observed and used for research. The historical diagnostic
-window overlaps research/target evidence and is not clean OOS. Four frozen-reference rows
-are not four fresh independent reruns: track/momentum share gquant's same window/capital,
-and momentum has no underlying data here. No-cap capital scans never certify capacity.
+`reference-inputs.json` 保存四个参考的来源、窗口、本金与指标；`tests/fixtures/economic-oracle.json` 固定连续账户/成交/事件的回归轨迹；独立成交量参考位于 `tests/fixtures/volume-reference/`。固定环境的完整账户序列位于 `../tests/fixtures/economic_sequences.json`，覆盖24组不重复的资金、成本与窗口条件。各类证据用途不同，不能互相替代。维护文档见 [结果与局限](../docs/results.md) 和 [验证说明](../docs/validation.md)。
