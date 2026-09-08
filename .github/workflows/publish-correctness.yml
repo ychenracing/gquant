@@ -9,7 +9,7 @@ permissions:
   contents: write
 
 concurrency:
-  group: publish-gquant-correctness-macos-v3
+  group: publish-gquant-correctness-macos-v4
   cancel-in-progress: false
 
 jobs:
@@ -25,6 +25,7 @@ jobs:
         run: |
           set -euo pipefail
           base=772e7650e258b9484b7400aab6d092bbce4998a1
+          echo "publisher_head=$(git rev-parse HEAD) event_sha=$GITHUB_SHA"
           test "$(git rev-parse HEAD)" = "$GITHUB_SHA"
           test "$(git merge-base HEAD "$base")" = "$base"
           python3 - <<'PY'
@@ -39,6 +40,7 @@ jobs:
           compressed = base64.b64decode(encoded, validate=True)
           patch = gzip.decompress(compressed)
           digest = hashlib.sha256(patch).hexdigest()
+          print(f'patch_sha256={digest} patch_bytes={len(patch)}')
           expected = '15d92904433b678a940907a4a6f1492775772edaf1b7f54a50cfb580bdf0b7c1'
           if digest != expected:
               raise SystemExit(f'patch sha mismatch: {digest}')
@@ -52,7 +54,9 @@ jobs:
           rm -rf .migration .github/workflows/publish-correctness.yml
           git add -A
           git diff --cached --check
-          test "$(git write-tree)" = 9667ae28199295612cc8f71f975daf35a0a7e0b7
+          actual_tree="$(git write-tree)"
+          echo "candidate_tree=$actual_tree"
+          test "$actual_tree" = 9667ae28199295612cc8f71f975daf35a0a7e0b7
       - name: Commit and push final candidate
         shell: bash
         run: |
