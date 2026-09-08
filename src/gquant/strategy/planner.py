@@ -82,8 +82,6 @@ class OrderPlanner:
                 )
                 dropped = [s for s in positions if s not in rot_target]
                 for s in dropped:
-                    if s in {o["symbol"] for o in pending_orders if o["action"] == "sell"}:
-                        continue
                     pending_orders.append(
                         {
                             "symbol": s,
