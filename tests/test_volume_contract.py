@@ -1,21 +1,28 @@
 """Board-specific raw units and independent, frozen Sina cross-checks."""
+
 from pathlib import Path
 
 import pandas as pd
 import pytest
 
-import fetch_data
+from gquant.infrastructure import provider as fetch_data
 
 ROOT = Path(__file__).resolve().parents[1]
 
 
-@pytest.mark.parametrize("symbol,expected", [
-    ("sz300308", 12300.0), ("sh601869", 12300.0),
-    ("sh688008", 123.0), ("sh000300", 0.0),
-])
+@pytest.mark.parametrize(
+    "symbol,expected",
+    [
+        ("sz300308", 12300.0),
+        ("sh601869", 12300.0),
+        ("sh688008", 123.0),
+        ("sh000300", 0.0),
+    ],
+)
 def test_tencent_raw_volume_units_are_board_specific(monkeypatch, symbol, expected):
-    monkeypatch.setattr(fetch_data, "_fetch_window",
-                        lambda *_a: [["2025-01-02", "10", "10", "11", "9", "123"]])
+    monkeypatch.setattr(
+        fetch_data, "_fetch_window", lambda *_a: [["2025-01-02", "10", "10", "11", "9", "123"]]
+    )
     frame = fetch_data.fetch_symbol(symbol, "fixture")
     assert frame.loc[0, "volume"] == expected
 
@@ -42,13 +49,21 @@ def test_fetch_validation_failure_preserves_existing_snapshot(monkeypatch, tmp_p
     existing = tmp_path / "sh601869.csv"
     existing.write_bytes(b"old frozen snapshot\n")
     before = {p.name: p.read_bytes() for p in tmp_path.iterdir()}
-    monkeypatch.setattr(fetch_data, "DATA_DIR", tmp_path)
-    monkeypatch.setattr(fetch_data, "SYMBOLS", {"sh601869": "fixture"})
-    monkeypatch.setattr(fetch_data, "MIN_ROWS", 1)
     monkeypatch.setattr(fetch_data.time, "sleep", lambda *_a: None)
-    frame = pd.DataFrame({"date": pd.to_datetime(["2025-01-02"]), "open": [10.],
-                          "high": [11.], "low": [9.], "close": [10.],
-                          "volume": [-100.], "amount": [-1000.]})
+    frame = pd.DataFrame(
+        {
+            "date": pd.to_datetime(["2025-01-02"]),
+            "open": [10.0],
+            "high": [11.0],
+            "low": [9.0],
+            "close": [10.0],
+            "volume": [-100.0],
+            "amount": [-1000.0],
+        }
+    )
     monkeypatch.setattr(fetch_data, "fetch_symbol", lambda *_a: frame)
-    assert fetch_data.main() == 1
+    from gquant.infrastructure.acquisition import fetch_snapshot
+
+    with pytest.raises(ValueError):
+        fetch_snapshot(tmp_path, {"sh601869": "fixture"}, min_rows=1)
     assert {p.name: p.read_bytes() for p in tmp_path.iterdir()} == before

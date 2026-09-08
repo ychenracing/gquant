@@ -1,0 +1,1 @@
+"""Strategy boundary for Gquant."""

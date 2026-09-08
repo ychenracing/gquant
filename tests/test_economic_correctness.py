@@ -1,4 +1,5 @@
 """Economic-correctness regressions for execution, risk timing and data integrity."""
+
 from __future__ import annotations
 
 import copy
@@ -9,17 +10,17 @@ import numpy as np
 import pandas as pd
 import pytest
 
-from fusion.config import CONFIG
-from fusion.data import load_symbol
-from fusion.economic_edge import extended_pair_stop_prices
-from fusion.engine import (
-    Position,
+from gquant.config import CONFIG
+from gquant.execution.rules import (
     _affordable_buy_shares,
     _normalize_buy_shares,
     _normalize_sell_shares,
 )
-from fusion.metrics import compute_metrics
-from fusion.regime import RegimeMachine
+from gquant.infrastructure.data import load_symbol
+from gquant.portfolio.models import Position
+from gquant.research.metrics import compute_metrics
+from gquant.risk.regime import RegimeMachine
+from gquant.strategy.rotation import extended_pair_stop_prices
 
 
 def _pair_fixture():
@@ -137,9 +138,7 @@ def test_star_buy_requires_at_least_200_shares():
 
 def test_affordable_buy_respects_order_budget_not_only_account_cash():
     cfg = copy.deepcopy(CONFIG)
-    got = _affordable_buy_shares(
-        "sz300308", 1000, 100.0, 50_000.0, 1_000_000.0, cfg
-    )
+    got = _affordable_buy_shares("sz300308", 1000, 100.0, 50_000.0, 1_000_000.0, cfg)
     assert got <= 400
 
 
