@@ -9,6 +9,7 @@ permissions:
   contents: read
 
 # Temporary exact-HEAD preflight; remove before opening the final PR.
+# Trigger identity: post-import-format-20260908
 jobs:
   preflight:
     runs-on: ubuntu-latest
