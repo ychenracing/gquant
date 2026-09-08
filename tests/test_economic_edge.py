@@ -133,6 +133,18 @@ def test_partial_risk_trim_does_not_force_name_out_of_target():
     assert target == ["a", "c"]
 
 
+def test_partial_trim_is_upgraded_with_default_disabled_hysteresis():
+    day, rf, ind, cfg = _rank_fixture()
+    cfg["rotation_contract"]["hysteresis"] = False
+    rf["d"] = 0.10
+    order = {"action": "sell", "symbol": "d", "reason": "risk_off_trim", "shares": 200}
+    positions = {"a": SimpleNamespace(shares=1000), "d": SimpleNamespace(shares=1200)}
+    target = stable_rotation_target(rf, positions, [order], ind, day, cfg)
+    assert target == ["a", "b"]
+    assert order["reason"] == "rotation_exit"
+    assert order["shares"] == 1200
+
+
 def test_partial_trim_is_upgraded_when_name_fully_drops_from_rotation():
     day, rf, ind, cfg = _rank_fixture()
     cfg["rotation_contract"]["hysteresis"] = True

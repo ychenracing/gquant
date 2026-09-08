@@ -1,0 +1,135 @@
+{
+  "source_repository": "ychenracing/trades",
+  "source_commit": "c3d838ce6349f8bdf0ec2988836212563aaa10bc",
+  "config_sha256": "21eece4aed7d427b230ec12c0326b0fd96f15795f48462115262c4169c74ed7d",
+  "data_manifest_sha256": "d4563e074d149b7bcebb1ec633cff5977b49c66a5352ef9b49ebdf9b0ed30f0d",
+  "float_significant_digits": 10,
+  "scenarios": [
+    {
+      "name": "default",
+      "start": "2025-04-01",
+      "end": "2026-08-31",
+      "initial_capital": 2000000.0,
+      "metrics": {
+        "total_return": 12.078268995636284,
+        "ann_return": 5.408493857161097,
+        "max_drawdown": -0.14173125040546797,
+        "sharpe": 3.795249516177514,
+        "calmar": 38.160207023421826,
+        "n_days": 346,
+        "final_equity": 26156537.99127257,
+        "round_trips": 150,
+        "avg_exposure": 0.6832272242841312,
+        "n_fills": 254
+      },
+      "account_sha256": "c779c41c5bf5c84d028e9dc3126897ad7371708e03c13418802fcfe9af0335f1",
+      "fills_sha256": "66d1478e95231b544641ee126a45e1532300031b6ded11dbe051d3a00f1ce8fe",
+      "events_sha256": "f437b75ce5c3705abcfdc0ef7b53b5872338be09d714707381d497e5df49b93d"
+    },
+    {
+      "name": "turtle_5",
+      "start": "2025-04-01",
+      "end": "2026-07-20",
+      "initial_capital": 2000000.0,
+      "metrics": {
+        "total_return": 12.805495285732302,
+        "ann_return": 6.978842036539408,
+        "max_drawdown": -0.14173125040546797,
+        "sharpe": 4.075688769278101,
+        "calmar": 49.23996660280763,
+        "n_days": 316,
+        "final_equity": 27610990.571464606,
+        "round_trips": 147,
+        "avg_exposure": 0.7419751944341302,
+        "n_fills": 248
+      },
+      "account_sha256": "80d0f5d7279299124d26dde6192ae6bf0715e16c7f6bf5c17a523998eac964d5",
+      "fills_sha256": "51d9c03514f38c4ff251305f97f1b66c19b1a18c16ab451e501dc250c0e065c4",
+      "events_sha256": "2e5aefa3d05760509438420d2ef0f3ec70a660d452660a6c05dd438ee2973be7"
+    },
+    {
+      "name": "track_trend_b",
+      "start": "2025-04-01",
+      "end": "2026-07-24",
+      "initial_capital": 1000000.0,
+      "metrics": {
+        "total_return": 12.573322214593757,
+        "ann_return": 6.672043588528223,
+        "max_drawdown": -0.14198472252361338,
+        "sharpe": 4.03881837408667,
+        "calmar": 46.99127814556668,
+        "n_days": 320,
+        "final_equity": 13573322.214593757,
+        "round_trips": 120,
+        "avg_exposure": 0.7297532984574892,
+        "n_fills": 216
+      },
+      "account_sha256": "9b93782d0fd9bd2f1adb4c05d3c87d463da9fbfc1b486ff2ff8d72047424f7e0",
+      "fills_sha256": "7727a4b3eb075d9654bd7458885370d75cc9b37dfb5d9c736aee195060ff83ec",
+      "events_sha256": "a80500cbd3c3a3258b7f268cc8d3cc890830feec6e9dcdff19c1e711d847f526"
+    },
+    {
+      "name": "glmcsm_6",
+      "start": "2025-01-02",
+      "end": "2026-07-24",
+      "initial_capital": 2000000.0,
+      "metrics": {
+        "total_return": 15.26416111204782,
+        "ann_return": 5.356294689743147,
+        "max_drawdown": -0.14178210695573634,
+        "sharpe": 3.789892354172868,
+        "calmar": 37.77835443943117,
+        "n_days": 377,
+        "final_equity": 32528322.224095643,
+        "round_trips": 173,
+        "avg_exposure": 0.7059190311523805,
+        "n_fills": 285
+      },
+      "account_sha256": "43f1c4cecf6b8f4fdcaf1854e70e4ce0eb1a93def03ba5829ed459102a0f673b",
+      "fills_sha256": "e46e742c8df4c3582f0a31b7b2e481f34d28d785bb764c517289988040189937",
+      "events_sha256": "1eedd56389c5933466be013b96d2b60686407a87639f330e0fe9653508f0ba4f"
+    },
+    {
+      "name": "momentum",
+      "start": "2025-04-01",
+      "end": "2026-07-24",
+      "initial_capital": 1000000.0,
+      "metrics": {
+        "total_return": 12.573322214593757,
+        "ann_return": 6.672043588528223,
+        "max_drawdown": -0.14198472252361338,
+        "sharpe": 4.03881837408667,
+        "calmar": 46.99127814556668,
+        "n_days": 320,
+        "final_equity": 13573322.214593757,
+        "round_trips": 120,
+        "avg_exposure": 0.7297532984574892,
+        "n_fills": 216
+      },
+      "account_sha256": "9b93782d0fd9bd2f1adb4c05d3c87d463da9fbfc1b486ff2ff8d72047424f7e0",
+      "fills_sha256": "7727a4b3eb075d9654bd7458885370d75cc9b37dfb5d9c736aee195060ff83ec",
+      "events_sha256": "a80500cbd3c3a3258b7f268cc8d3cc890830feec6e9dcdff19c1e711d847f526"
+    },
+    {
+      "name": "diagnostic",
+      "start": "2024-04-01",
+      "end": "2025-03-31",
+      "initial_capital": 2000000.0,
+      "metrics": {
+        "total_return": -0.1147177614170175,
+        "ann_return": -0.1187369709354571,
+        "max_drawdown": -0.25901335122685043,
+        "sharpe": -0.18522949777554787,
+        "calmar": -0.45842027205564495,
+        "n_days": 241,
+        "final_equity": 1770564.477165965,
+        "round_trips": 114,
+        "avg_exposure": 0.45275045436210565,
+        "n_fills": 217
+      },
+      "account_sha256": "dc4d0ab256759cc76dc8744e3291f32620043b813cd05ef61b704c5d120b7815",
+      "fills_sha256": "7c4b8f08447cceee89fc8b75a94271f4f96cf101f54a9700ab26d9848174fb48",
+      "events_sha256": "1199af33d446ad8ab4e3d310f28efd195834e5af747eead3b17138a5ab9095eb"
+    }
+  ]
+}

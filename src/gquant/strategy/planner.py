@@ -36,6 +36,15 @@ class OrderPlanner:
         self.cfg = cfg
         self.last_trim_day: dict[str, pd.Timestamp] = {}
 
+    def export_state(self) -> dict[str, object]:
+        return {"last_trim_day": {k: str(v.date()) for k, v in self.last_trim_day.items()}}
+
+    def restore_state(self, raw: dict[str, object]) -> None:
+        value = raw.get("last_trim_day", {})
+        if not isinstance(value, dict):
+            raise ValueError("invalid planner continuation state")
+        self.last_trim_day = {str(k): pd.Timestamp(v) for k, v in value.items()}
+
     def plan(
         self, ctx: DecisionContext, account: Account, pending_orders: list[Order]
     ) -> list[Order]:
@@ -73,8 +82,6 @@ class OrderPlanner:
                 )
                 dropped = [s for s in positions if s not in rot_target]
                 for s in dropped:
-                    if s in {o["symbol"] for o in pending_orders if o["action"] == "sell"}:
-                        continue
                     pending_orders.append(
                         {
                             "symbol": s,
@@ -110,12 +117,12 @@ class OrderPlanner:
             pool = cfg["core_universe"]
             tilt_factor = cfg["winner_tilt_factor"]
             if tilt:
-                tilt_src = {
-                    "volume": ind["volume_ratio"].loc[day],
-                    "ret63": ind["ret63"].loc[day],
-                    "ret20": ind["ret20"].loc[day],
-                    "momentum": ranks,
-                }[tilt_factor]
+                if tilt_factor == "volume":
+                    tilt_src = ind["volume_ratio"].loc[day]
+                elif tilt_factor == "momentum":
+                    tilt_src = ranks
+                else:
+                    tilt_src = ind[tilt_factor].loc[day]
                 pool_ranks = tilt_src.reindex([s for s in pool if s in tilt_src.index]).rank(
                     pct=True
                 )

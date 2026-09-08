@@ -7,6 +7,7 @@ import math
 import pandas as pd
 
 from gquant.config import Config
+from gquant.portfolio.accounting import trade_cost
 
 
 def _is_star_market(symbol: str) -> bool:
@@ -40,10 +41,8 @@ def _normalize_sell_shares(symbol: str, requested: int, available: int) -> int:
 
 
 def _trade_cost_for_cfg(value: float, side: str, cfg: Config) -> float:
-    commission = max(value * cfg["commission_bps"] / 1e4, cfg["min_commission"])
-    transfer = value * cfg["transfer_fee_bps"] / 1e4
-    stamp = value * cfg["stamp_tax_bps"] / 1e4 if side == "sell" else 0.0
-    return commission + transfer + stamp
+    """Compatibility wrapper around the shared settlement contract."""
+    return trade_cost(value, side, cfg)
 
 
 def _affordable_buy_shares(

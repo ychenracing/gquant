@@ -24,6 +24,16 @@
       "path": "raw/historical-9c00ff47-8pct.json",
       "sha256": "4f44f766ded1bd9c5641f88fa634c742758be239a558b557b8c7d12311adc266",
       "use": "retained evidence; not current acceptance"
+    },
+    {
+      "path": "raw/pre-correctness-economic-oracle.json",
+      "sha256": "4c810d344b9f1d280653b6e7b03bca00cc0e1702d41b0c6a4025007c53f21808",
+      "use": "pre-correctness account/fill/event fingerprint retained byte-for-byte; not current acceptance"
+    },
+    {
+      "path": "raw/pre-correctness-economic-sequences.json",
+      "sha256": "fe7043f4733b8b2ca5ef1dbbd2cf38402fd2bf977dc2cf71bb6989d388c5cc19",
+      "use": "pre-correctness full account-path fixture retained byte-for-byte; not current acceptance"
     }
   ]
 }

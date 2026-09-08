@@ -1,36 +1,112 @@
 # 运行指南
 
-## 命令与退出码
+## 常用命令
 
-`python -m gquant --help` 列出所有命令；每个命令支持 `--help`。`config` 输出默认配置，`validate-data` 校验输入，`backtest` 运行账户回放，`validate` 完成参考条件与诊断，`fetch-data` 获取独立网络输入。
+`python -m gquant --help` 列出全部命令。`config`输出默认配置，`validate-data`校验冻结数据，`backtest`运行连续模拟账户，`validate`运行固定参考与诊断，`account-init`接管人工真实账户，`resume-account`按实际成交继续账户状态，`fetch-data`只获取独立候选数据。
 
-退出码0表示命令执行成功；`validate` 返回1表示参考门或账本检查失败，失败报告仍会完整发布；退出码2表示参数、输入、网络或发布错误；参数与输入失败不会发布新结果，发布期间异常须按下述提交点规则核对结果。修改配置的诊断即使比较全部通过，也只有 `formal_configuration=false`，不能作为默认验收。
+```sh
+python -m gquant validate-data --data-dir data
+python -m gquant backtest --data-dir data --output outputs/backtest
+python -m gquant validate --data-dir data --output outputs/validation --capital-scan
+```
 
-`validate --standard-only` 是缩小诊断范围的标准条件运行，不代表完整研究诊断全部完成。正式 CI 执行包含历史、成本和资金扫描的命令。输出保存在调用者指定的目录中；从其他工作目录运行须显式指定仓库数据路径。
+`validate`退出码0表示四个固定参考与账本全部通过；当前默认经济状态为3/4，因此正常返回1并发布完整报告。退出码2表示参数、输入、网络或发布错误。
 
-## 连续区间与日常观察
+## 接管人工账户
 
-需要查看2026-06-20～08-30时，使用 `backtest --interval 2026-06-20 2026-08-30`；保持完整回放起点不变。结果报告锚点和真实交易日，不把周末当作交易日，也不在区间起点重新注资。要求的区间没有更早账户锚点或没有交易日时会报错。
+真实账户首次接管必须显式确认风险状态重置，因为系统没有你接管日前的真实高水位、冷却计数和历史风险状态。账户文件示例：
 
-程序没有真实账户持仓导入、券商回报或自动下单入口。回测账本不是你的真实账户账本。使用报告辅助判断前，必须自行核对最新行情截至日、实际持仓、可卖数量、现金和订单；也不能把已过期冻结快照的最后一笔模拟交易当作今天的指令。
+```json
+{
+  "cash": 500000.0,
+  "positions": [
+    {
+      "symbol": "sz300308",
+      "shares": 1000,
+      "sellable_shares": 1000,
+      "entry_price": 150.0,
+      "entry_date": "2026-01-05"
+    }
+  ]
+}
+```
+
+```sh
+python -m gquant account-init \
+  --account account.json \
+  --as-of 2026-08-28 \
+  --risk-reset \
+  --data-dir data \
+  --output outputs/account
+```
+
+`--risk-reset`不是交易指令，而是证据边界：接管日之前的真实账户风险历史未知，从该日开始重新建立组合高水位和冷却状态。输出包含`state.json`、`account.json`、`next_orders.json`、`reconciliations.json`、配置和身份。`state.json`同时封存截至接管日的OHLCV历史前缀身份；后续可以追加未来交易日，但已处理历史被修订时续接会拒绝运行。`next_orders.json`只是下一交易日的人工决策清单，不会发送给券商。
+
+## 用实际成交继续账户
+
+券商实际成交和公司行动通过显式JSON输入。一个交易日即使完全没有成交，也应提供空`fills`数组，表示该会话的实际回报是权威的“零成交”。每笔实际成交必须显式提供`fees`；若真实费用为零也写`"fees": 0`，系统不会把缺失费用静默当作零。
+
+```json
+{
+  "sessions": [
+    {
+      "date": "2026-08-31",
+      "fills": [
+        {
+          "symbol": "sz300308",
+          "side": "sell",
+          "shares": 600,
+          "price": 150.5,
+          "fees": 10.0
+        }
+      ],
+      "corporate_actions": []
+    }
+  ]
+}
+```
+
+支持的公司行动需显式给出：
+
+```json
+{"symbol":"sz300308","kind":"split","ratio":2.0}
+{"symbol":"sz300308","kind":"cash_dividend","cash_per_share_net":0.5}
+```
+
+继续运行：
+
+```sh
+python -m gquant resume-account \
+  --state outputs/account \
+  --actual-events actual.json \
+  --end 2026-08-31 \
+  --data-dir data \
+  --output outputs/account-next
+```
+
+实际成交会更新真实现金和库存，并记录与计划数量的偏差；未完成的完整退出会继续保留为待办。续接前会核对保存日及以前的已准入行情前缀，历史数据发生修订时直接失败；单纯增加后续交易日不会破坏续接。实际回报不会被伪装成模拟成交。系统仍不连接券商、不提交订单。
+
+## 模拟账户连续区间
+
+`backtest --interval START END`只从完整模拟账户轨迹截取区间，保留此前现金、持仓和风险状态。`EngineState`还支持同一模拟账户在交易日收盘保存并恢复；测试要求“保存→JSON往返→恢复”与一次性完整回放的逐日权益、敞口、状态、事件和成交完全一致。
 
 ## 原子输出与恢复
 
-`latest.json` 指向 `runs/<标识>/`，其中 `manifest.json` 覆盖报告文件哈希。Python 调用者可用 `gquant.infrastructure.artifacts.read_latest(Path(...))` 读取并验证完整报告。一次回测报告的权益、成交、配置、身份和说明属于同一代次；禁止跨代次拼接。
+`latest.json`指向`runs/<标识>/`的一次完整发布，`manifest.json`固定全部文件哈希。写入过程由`.publish.lock`互斥，只有完整代次写好后才原子更新指针。提交点前失败不会移动`latest.json`；提交点后若清理失败，应先用`gquant.infrastructure.artifacts.read_latest()`验证指针和文件，不要仅凭进程退出码决定是否重跑。
 
-发布前会创建 `.publish.lock`。已有写入者或残留锁会使新写入失败，避免互相覆盖。原子替换 `latest.json` 是提交点。提交前的写入错误不会移动指针；可能留下未被引用的目录或暂存文件，它们不是自动接受的结果。提交后进程中断，或释放锁等收尾操作失败时，命令可能没有正常返回，但新代次已经完整发布。此时先用 `read_latest` 验证指针、全部文件及本次配置与源码身份，再判断是否已有本次结果；不要因退出码非零就立即重跑。
+数据获取同样先写独立快照并完整校验，再发布；不会逐个覆盖当前冻结CSV形成混合快照。冻结研究数据不会因`fetch-data`自动替换。
 
-发现残留锁时先确认相关命令已经结束，检查上一完整代次可读，再清理该输出目录的锁和无引用暂存文件。不要自动抢锁，不要删除仍在运行的任务输出，不要改动原始研究证据。该协议针对单机进程失败与原子替换；不承诺跨网络文件系统事务或断电后硬件持久化。
+## 常见错误
 
-## 常见失败
-
-| 提示 | 检查方式 |
+| 提示 | 含义/处理 |
 |---|---|
-| snapshot hash mismatch | 文件是否被编辑或重复换算；恢复正确完整输入，不修改哈希来掩盖变更 |
-| missing/duplicate snapshot record | CSV 文件集合与元数据是否一致 |
-| expected a finite number | 参数或行情中是否出现字符串、NaN、Infinity |
-| position has no usable mark | 持仓没有任何有效估值数据；不要用零或删除持仓代替 |
-| publication writer is active | 确认写入者/锁状态，不并行写同一输出目录 |
-| configuration diagnostic | 使用了非默认配置；不要将其当默认正式验收 |
+| snapshot hash mismatch | 数据字节与清单不一致；恢复完整正确快照，不改哈希掩盖变更 |
+| duplicate/invalid snapshot date | 日期重复、为空或不合法；拒绝静默去重 |
+| requested start precedes snapshot | 请求起点早于快照；补齐历史或缩短请求，不静默截短 |
+| requested end exceeds snapshot | 请求终点晚于快照；补齐数据或缩短请求，不静默截短 |
+| unknown configuration field | 参数名拼写或配置面不合法 |
+| initial account takeover requires explicit --risk-reset | 首次人工账户接管缺少明确风险重置边界 |
+| admitted data history differs from saved account state | 保存日及以前的行情已变化；不得把旧账户/风险状态接到修订后的历史上 |
+| publication writer is active | 同一输出目录已有写入者；先核实任务和锁状态 |
 
-报告目录默认被 Git 忽略。需要保留一次证据时应保存整个代次、代码身份、环境和完整配置，而不只复制收益数字。
+报告目录默认不入Git。需要保留证据时保存整个代次、源码身份、环境、配置和输入身份，而不是只复制收益数字。

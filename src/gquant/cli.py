@@ -8,11 +8,15 @@ import sys
 from datetime import date
 from pathlib import Path
 
+import pandas as pd
+
+from .application.operations import initialize_and_publish, resume_and_publish
 from .application.service import backtest
 from .application.validation import validate_economics
 from .infrastructure.acquisition import fetch_snapshot, request_windows
 from .infrastructure.configuration import load_config
 from .infrastructure.data import validate_snapshot
+from .infrastructure.jsonio import object_from
 
 
 def parser() -> argparse.ArgumentParser:
@@ -43,6 +47,25 @@ def parser() -> argparse.ArgumentParser:
                 action="store_true",
                 help="只运行标准参考和完整账户，不执行成本/历史诊断",
             )
+    account = commands.add_parser("account-init", help="显式风险重置后接管真实人工账户")
+    account.add_argument("--account", type=Path, required=True, help="现金与持仓 JSON")
+    account.add_argument("--as-of", type=date.fromisoformat, required=True)
+    account.add_argument(
+        "--risk-reset", action="store_true", help="确认历史回撤/冷却状态从接管日重置"
+    )
+    account.add_argument("--config", type=Path)
+    account.add_argument("--data-dir", type=Path, default=Path("data"))
+    account.add_argument("--output", type=Path, required=True)
+    resume = commands.add_parser("resume-account", help="从已保存账户状态继续并可核对券商实际成交")
+    resume.add_argument(
+        "--state", type=Path, required=True, help="account-init/resume-account 的输出根目录"
+    )
+    resume.add_argument("--data-dir", type=Path, default=Path("data"))
+    resume.add_argument("--output", type=Path, required=True)
+    resume.add_argument("--end", type=date.fromisoformat)
+    resume.add_argument(
+        "--actual-events", type=Path, help="按交易日列出的权威实际成交/公司行动 JSON"
+    )
     fetch = commands.add_parser("fetch-data", help="联网获取独立候选数据；不修改冻结 data/ 目录")
     fetch.add_argument("--start", type=date.fromisoformat, required=True)
     fetch.add_argument("--end", type=date.fromisoformat, required=True)
@@ -58,6 +81,36 @@ def main(argv: list[str] | None = None) -> int:
             return 0
         if args.command == "validate-data":
             print(json.dumps(validate_snapshot(args.data_dir), ensure_ascii=False))
+            return 0
+        if args.command == "account-init":
+            cfg = load_config(args.config)
+            as_of = args.as_of.isoformat()
+            if pd.Timestamp(as_of) > pd.Timestamp(cfg["end"]):
+                raw = dict(cfg)
+                raw["end"] = as_of
+                from .infrastructure.configuration import validate_config
+
+                cfg = validate_config(raw)
+            destination = initialize_and_publish(
+                cfg,
+                args.data_dir,
+                args.output,
+                pd.Timestamp(as_of),
+                object_from(args.account.read_bytes()),
+                risk_reset=args.risk_reset,
+            )
+            print(destination)
+            return 0
+        if args.command == "resume-account":
+            events = object_from(args.actual_events.read_bytes()) if args.actual_events else None
+            destination = resume_and_publish(
+                args.state,
+                args.data_dir,
+                args.output,
+                end=args.end.isoformat() if args.end else None,
+                actual_events=events,
+            )
+            print(destination)
             return 0
         if args.command == "fetch-data":
             if args.output.resolve() == Path("data").resolve():

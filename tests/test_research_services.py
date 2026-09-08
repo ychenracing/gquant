@@ -83,8 +83,8 @@ def test_ledger_exposes_all_violation_classes():
 def test_ledger_allows_overnight_whole_residual_sale():
     days = pd.to_datetime(["2026-06-18", "2026-06-22", "2026-08-28"])
     fills = [
-        Fill(days[1], "sh688008", "buy", 200, 10.0, 10000.0, "entry"),
-        Fill(days[2], "sh688008", "sell", 200, 10.0, 11990.0, "exit"),
+        Fill(days[1], "sh688008", "buy", 200, 10.0, 1_997_994.98, "entry"),
+        Fill(days[2], "sh688008", "sell", 200, 10.0, 1_999_988.96, "exit"),
     ]
     volume = pd.DataFrame({"sh688008": [10000.0, 10000.0, 10000.0]}, index=days)
     assert not has_violations([ledger_audit(result(fills), make_config(), volume)])
@@ -125,6 +125,8 @@ def test_validation_reports_diagnostics_without_relabelling(monkeypatch, tmp_pat
     monkeypatch.setattr(validation, "BacktestEngine", FakeEngine)
     monkeypatch.setattr(validation, "admit_snapshot", lambda _p: admitted)
     monkeypatch.setattr(validation, "identity", lambda config, _p, _d: {"config": config})
+    monkeypatch.setattr(validation, "profit_concentration", lambda *_a: {"rows": []})
+    monkeypatch.setattr(validation, "diagnostic_configs", lambda _cfg: [])
     _, success = validation.validate_economics(
         cfg, tmp_path, tmp_path / "formal", capital_scan=True
     )

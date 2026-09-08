@@ -74,4 +74,12 @@ class Session:
     open: pd.Series[Any]
     known_close: pd.Series[Any]
     known_volume: pd.Series[Any]
+    observed_volume: pd.Series[Any] | None = None
     filled: dict[str, int] = field(default_factory=dict)
+
+    def is_tradeable(self, symbol: str) -> bool:
+        """Use same-day volume only as an ex-post no-trade veto, never as sizing information."""
+        if self.observed_volume is None:
+            return True
+        value = self.observed_volume.get(symbol, float("nan"))
+        return bool(pd.notna(value) and float(value) > 0)

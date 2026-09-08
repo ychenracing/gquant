@@ -59,7 +59,11 @@ class ExecutionSimulator:
                 prev_c = known_close_row.get(symbol, float("nan"))
                 known_volume = known_volume_row.get(symbol, float("nan"))
                 data_ok = (
-                    pd.notna(open_price) and open_price > 0 and pd.notna(prev_c) and prev_c > 0
+                    pd.notna(open_price)
+                    and open_price > 0
+                    and pd.notna(prev_c)
+                    and prev_c > 0
+                    and session.is_tradeable(symbol)
                 )
                 if not data_ok:
                     # 风险/完整退出不能在“顺延3次”后静默消失；待恢复交易继续提交。
@@ -193,7 +197,13 @@ class ExecutionSimulator:
                     continue
                 open_price = session.open.get(symbol)
                 prev_c = previous_closes.get(symbol)
-                if pd.isna(open_price) or open_price <= 0 or pd.isna(prev_c) or prev_c <= 0:
+                if (
+                    pd.isna(open_price)
+                    or open_price <= 0
+                    or pd.isna(prev_c)
+                    or prev_c <= 0
+                    or not session.is_tradeable(symbol)
+                ):
                     pending_orders.append(
                         {
                             "symbol": symbol,

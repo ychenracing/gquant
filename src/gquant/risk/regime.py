@@ -94,5 +94,19 @@ class RegimeMachine:
             self.state = "TREND"
         return self.state
 
+    def export_state(self) -> dict[str, object]:
+        return {"state": self.state, "reclaim_streak": self._reclaim_streak}
+
+    def restore_state(self, raw: dict[str, object]) -> None:
+        state = str(raw.get("state", ""))
+        raw_streak = raw.get("reclaim_streak", 0)
+        if isinstance(raw_streak, bool) or not isinstance(raw_streak, int | str):
+            raise ValueError("invalid regime continuation state")
+        streak = int(raw_streak)
+        if state not in STATES or streak < 0:
+            raise ValueError("invalid regime continuation state")
+        self.state = state
+        self._reclaim_streak = streak
+
     def exposure_cap(self) -> float:
         return float(self.cfg["exposure_caps"][self.state])

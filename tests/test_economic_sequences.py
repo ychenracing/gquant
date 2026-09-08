@@ -4,7 +4,6 @@ import hashlib
 import json
 from pathlib import Path
 
-import pandas as pd
 import pytest
 
 from gquant.application.engine import BacktestEngine
@@ -13,15 +12,58 @@ from gquant.infrastructure.configuration import make_config
 from gquant.research.metrics import summarize
 
 ROOT = Path(__file__).resolve().parents[1]
-SOURCE = json.loads((ROOT / "tests/fixtures/economic_sequences.json").read_text(encoding="utf-8"))
+FIXTURE = ROOT / "tests/fixtures/economic-sequence-digests.json"
+SOURCE = json.loads(FIXTURE.read_text(encoding="utf-8"))
+
+
+def digest(value):
+    return hashlib.sha256(
+        json.dumps(value, ensure_ascii=False, separators=(",", ":")).encode()
+    ).hexdigest()
+
+
+def source_behavior_sha256():
+    hasher = hashlib.sha256()
+    for path in sorted((ROOT / "src/gquant").rglob("*.py")):
+        relative = str(path.relative_to(ROOT)).replace("\\", "/")
+        hasher.update(relative.encode())
+        hasher.update(b"\0")
+        hasher.update(path.read_bytes().replace(b"\r\n", b"\n"))
+        hasher.update(b"\0")
+    return hasher.hexdigest()
+
+
+def canonical_trace(result):
+    return [
+        [
+            str(day.date()),
+            format(float(eq), ".10g"),
+            format(float(result.daily_exposure.loc[day]), ".10g"),
+            result.regime_series.loc[day],
+        ]
+        for day, eq in result.equity_curve.items()
+    ]
+
+
+def canonical_fills(result):
+    return [
+        [
+            str(fill.date.date()),
+            fill.symbol,
+            fill.side,
+            fill.shares,
+            format(fill.price, ".10g"),
+            format(fill.cash_after, ".10g"),
+            fill.reason,
+        ]
+        for fill in result.trades
+    ]
 
 
 def test_source_identity_and_complete_case_set():
-    assert (
-        hashlib.sha256((ROOT / "tests/fixtures/economic_sequences.json").read_bytes()).hexdigest()
-        == "fe7043f4733b8b2ca5ef1dbbd2cf38402fd2bf977dc2cf71bb6989d388c5cc19"
-    )
-    assert SOURCE["source_sha"] == "69d508811bc5a25f94e9ab05d21db908b5adb305"
+    assert SOURCE["source_repository"] == "ychenracing/gquant"
+    assert SOURCE["producer_parent_sha"] == "772e7650e258b9484b7400aab6d092bbce4998a1"
+    assert SOURCE["behavior_sha256"] == source_behavior_sha256()
     assert SOURCE["default_config"] == CONFIG
     assert len(SOURCE["cases"]) == 24
     assert (
@@ -34,28 +76,11 @@ def test_source_identity_and_complete_case_set():
 @pytest.mark.parametrize("case", SOURCE["cases"], ids=lambda case: case["names"][0])
 def test_complete_frozen_sequences(case):
     actual = BacktestEngine(make_config(case["request"]), ROOT / "data").run()
-    dates = pd.to_datetime(case["dates"])
-    pd.testing.assert_index_equal(pd.DatetimeIndex(actual.equity_curve.index), dates)
-    for series, expected in (
-        (actual.equity_curve, case["equity"]),
-        (actual.daily_exposure, case["exposure"]),
-    ):
-        pd.testing.assert_series_equal(
-            series, pd.Series(expected, index=dates), check_names=False, rtol=1e-12, atol=1e-8
-        )
-    assert list(actual.regime_series) == case["regime"]
-    assert actual.events == case["events"]
-    assert len(actual.trades) == len(case["fills"])
-    for fill, expected in zip(actual.trades, case["fills"], strict=True):
-        assert str(fill.date.date()) == expected["date"]
-        assert (fill.symbol, fill.side, fill.shares, fill.reason) == (
-            expected["symbol"],
-            expected["side"],
-            expected["shares"],
-            expected["reason"],
-        )
-        assert fill.price == pytest.approx(expected["price"], rel=1e-12, abs=1e-10)
-        assert fill.cash_after == pytest.approx(expected["cash_after"], rel=1e-12, abs=1e-8)
+    assert len(actual.equity_curve) == case["days"]
+    assert len(actual.trades) == case["fills_count"]
+    assert digest(canonical_trace(actual)) == case["trace_sha256"]
+    assert digest(canonical_fills(actual)) == case["fills_sha256"]
+    assert digest(actual.events) == case["events_sha256"]
     metrics = summarize(actual)
     for key in ("total_return", "max_drawdown", "sharpe", "final_equity"):
         assert metrics[key] == pytest.approx(case["metrics"][key], rel=1e-12, abs=1e-10)

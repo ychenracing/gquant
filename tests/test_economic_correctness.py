@@ -17,7 +17,8 @@ from gquant.execution.rules import (
     _normalize_sell_shares,
 )
 from gquant.infrastructure.data import load_symbol
-from gquant.portfolio.models import Position
+from gquant.portfolio.models import Fill, Position, Result
+from gquant.research.audit import ledger_audit
 from gquant.research.metrics import compute_metrics
 from gquant.risk.regime import RegimeMachine
 from gquant.strategy.rotation import extended_pair_stop_prices
@@ -159,3 +160,22 @@ def test_position_t1_sellable_excludes_same_day_topup():
 def test_metrics_reject_nonpositive_equity(values):
     with pytest.raises(ValueError):
         compute_metrics(pd.Series(values))
+
+
+def test_ledger_audit_rejects_impossible_cash_after():
+    cfg = copy.deepcopy(CONFIG)
+    day = pd.Timestamp("2026-01-05")
+    result = Result(
+        equity_curve=pd.Series([cfg["initial_capital"]], index=[day]),
+        drawdown_series=pd.Series([0.0], index=[day]),
+        trades=[Fill(day, "sz300308", "buy", 100, 100.0, 9_000_000_000.0, "test")],
+        daily_exposure=pd.Series([0.0], index=[day]),
+        regime_series=pd.Series(["TREND"], index=[day]),
+        final_equity=cfg["initial_capital"],
+        events=[],
+    )
+    volume = pd.DataFrame(
+        {"sz300308": [1_000_000.0, 1_000_000.0]}, index=[day - pd.Timedelta(days=1), day]
+    )
+    audit = ledger_audit(result, cfg, volume)
+    assert audit["cash_violations"]
