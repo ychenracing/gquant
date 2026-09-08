@@ -3,6 +3,7 @@
 from __future__ import annotations
 
 from dataclasses import dataclass
+from typing import cast
 
 import pandas as pd
 
@@ -107,7 +108,7 @@ def restored_runtime(cfg: Config, state: EngineState, index: pd.DatetimeIndex) -
         planner=planner,
         regime=regime,
         guard=guard,
-        pending_orders=[dict(order) for order in restored.pending_orders],
+        pending_orders=[cast(Order, dict(order)) for order in restored.pending_orders],
         pulse_cooldown_left=restored.pulse_cooldown_left,
         prev_target_gross=restored.prev_target_gross,
         equity_hist=list(restored.vol_equity_hist),
@@ -131,7 +132,7 @@ def capture_state(runtime: Runtime) -> EngineState:
     return EngineState(
         last_processed_day=last_day,
         account=runtime.account,
-        pending_orders=[dict(order) for order in runtime.pending_orders],
+        pending_orders=[cast(Order, dict(order)) for order in runtime.pending_orders],
         regime=runtime.regime.export_state(),
         guard=runtime.guard.export_state(),
         planner=runtime.planner.export_state(),
