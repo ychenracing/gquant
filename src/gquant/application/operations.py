@@ -5,6 +5,7 @@ from __future__ import annotations
 import copy
 import hashlib
 import math
+from datetime import date
 from pathlib import Path
 from typing import Any, cast
 
@@ -49,6 +50,8 @@ def _whole(value: object, label: str, *, positive: bool = False) -> int:
 
 
 def _timestamp(value: object, label: str) -> pd.Timestamp:
+    if not isinstance(value, str | date):
+        raise ValueError(f"invalid {label}")
     try:
         day = pd.Timestamp(value)
     except (TypeError, ValueError) as exc:

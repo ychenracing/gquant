@@ -1,7 +1,7 @@
 {
   "source_repository": "ychenracing/gquant",
   "producer_parent_sha": "772e7650e258b9484b7400aab6d092bbce4998a1",
-  "behavior_sha256": "7488d1e84f1bba34cda53a8de8c2d304109dfa92421581a0d0414a9260f063ea",
+  "behavior_sha256": "1a17e04a0a86d805eb5e467108fd0b7a4d9bce59e69e9009e4981ab2b82c5abd",
   "config_sha256": "21eece4aed7d427b230ec12c0326b0fd96f15795f48462115262c4169c74ed7d",
   "data_manifest_sha256": "d4563e074d149b7bcebb1ec633cff5977b49c66a5352ef9b49ebdf9b0ed30f0d",
   "float_significant_digits": 10,

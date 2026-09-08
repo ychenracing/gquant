@@ -4,6 +4,7 @@ from __future__ import annotations
 
 import re
 from dataclasses import dataclass, field
+from datetime import date
 from typing import Any
 
 import pandas as pd
@@ -14,6 +15,8 @@ from gquant.portfolio.models import Account, Fill, Order, Position
 def _day(value: object | None, label: str) -> pd.Timestamp | None:
     if value is None:
         return None
+    if not isinstance(value, str | date):
+        raise ValueError(f"invalid {label}")
     try:
         day = pd.Timestamp(value)
     except (TypeError, ValueError) as exc:

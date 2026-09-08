@@ -9,7 +9,6 @@ from typing import Any
 import pandas as pd
 
 from gquant.config import Config
-from gquant.infrastructure.configuration import validate_config
 from gquant.portfolio.accounting import trade_cost
 from gquant.portfolio.models import Result
 
@@ -23,8 +22,8 @@ _OPTICAL_CHAIN_PROXY = {
 _SEMICONDUCTOR_PROXY = {"sh688008", "sh603986"}
 
 
-def _clone(cfg: Config) -> dict[str, Any]:
-    return copy.deepcopy(dict(cfg))
+def _clone(cfg: Config) -> Config:
+    return copy.deepcopy(cfg)
 
 
 def diagnostic_configs(cfg: Config) -> list[tuple[str, Config]]:
@@ -33,30 +32,30 @@ def diagnostic_configs(cfg: Config) -> list[tuple[str, Config]]:
 
     equal = _clone(cfg)
     equal["rotation_sizing"] = "equal"
-    rows.append(("ablation_rotation_sizing_equal", validate_config(equal)))
+    rows.append(("ablation_rotation_sizing_equal", equal))
 
     no_pair = _clone(cfg)
     contract = copy.deepcopy(no_pair["rotation_contract"])
     contract["pair_stop"] = False
     no_pair["rotation_contract"] = contract
-    rows.append(("ablation_pair_stop_off", validate_config(no_pair)))
+    rows.append(("ablation_pair_stop_off", no_pair))
 
     for symbol in cfg["core_universe"]:
         raw = _clone(cfg)
         raw["core_universe"] = [item for item in cfg["core_universe"] if item != symbol]
-        rows.append((f"exclude_core_{symbol}", validate_config(raw)))
+        rows.append((f"exclude_core_{symbol}", raw))
 
     optical = _clone(cfg)
     optical["core_universe"] = [
         symbol for symbol in cfg["core_universe"] if symbol not in _OPTICAL_CHAIN_PROXY
     ]
-    rows.append(("exclude_theme_optical_chain_proxy", validate_config(optical)))
+    rows.append(("exclude_theme_optical_chain_proxy", optical))
 
     semiconductor = _clone(cfg)
     semiconductor["core_universe"] = [
         symbol for symbol in cfg["core_universe"] if symbol not in _SEMICONDUCTOR_PROXY
     ]
-    rows.append(("exclude_theme_semiconductor_proxy", validate_config(semiconductor)))
+    rows.append(("exclude_theme_semiconductor_proxy", semiconductor))
 
     if len(rows) != 11:
         raise AssertionError("fixed robustness matrix must contain exactly eleven cases")

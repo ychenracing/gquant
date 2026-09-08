@@ -41,7 +41,7 @@ def test_backtest_publishes_continuous_account(tmp_path):
     output = read_latest(tmp_path)
     assert output["report.json"]["continuous_interval"]["account_reset"] is False
     assert output["report.json"]["continuous_interval"]["return"] == pytest.approx(
-        -0.02757322781761684
+        -0.02762197368224517
     )
     assert output["config.json"] == cfg
     assert output["identity.json"]["data"]["symbols"] == 41

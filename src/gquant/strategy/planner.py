@@ -117,12 +117,12 @@ class OrderPlanner:
             pool = cfg["core_universe"]
             tilt_factor = cfg["winner_tilt_factor"]
             if tilt:
-                tilt_src = {
-                    "volume": ind["volume_ratio"].loc[day],
-                    "ret63": ind["ret63"].loc[day],
-                    "ret20": ind["ret20"].loc[day],
-                    "momentum": ranks,
-                }[tilt_factor]
+                if tilt_factor == "volume":
+                    tilt_src = ind["volume_ratio"].loc[day]
+                elif tilt_factor == "momentum":
+                    tilt_src = ranks
+                else:
+                    tilt_src = ind[tilt_factor].loc[day]
                 pool_ranks = tilt_src.reindex([s for s in pool if s in tilt_src.index]).rank(
                     pct=True
                 )
