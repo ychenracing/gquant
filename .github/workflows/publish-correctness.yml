@@ -1,0 +1,50 @@
+name: Publish verified correctness candidate
+
+on:
+  push:
+    branches: [codex/gquant-correctness-operations-20260908]
+    paths: ['.github/workflows/publish-correctness.yml']
+
+permissions:
+  contents: write
+
+concurrency:
+  group: publish-gquant-correctness
+  cancel-in-progress: false
+
+jobs:
+  publish:
+    runs-on: ubuntu-latest
+    timeout-minutes: 10
+    steps:
+      - uses: actions/checkout@11bd71901bbe5b1630ceea73d27597364c9af683
+        with:
+          ref: codex/gquant-correctness-operations-20260908
+          fetch-depth: 0
+      - name: Reconstruct exact reviewed candidate
+        shell: bash
+        run: |
+          set -euo pipefail
+          base=772e7650e258b9484b7400aab6d092bbce4998a1
+          test "$(git merge-base HEAD "$base")" = "$base"
+          cat .migration/part00 .migration/part01 .migration/part02 .migration/part03 .migration/part04 \
+            | base64 -d | gzip -d > /tmp/candidate.patch
+          echo '15d92904433b678a940907a4a6f1492775772edaf1b7f54a50cfb580bdf0b7c1  /tmp/candidate.patch' \
+            | sha256sum -c -
+          mkdir -p evidence/raw
+          cp tests/fixtures/economic_sequences.json evidence/raw/pre-correctness-economic-sequences.json
+          cp tests/fixtures/economic-oracle.json evidence/raw/pre-correctness-economic-oracle.json
+          rm tests/fixtures/economic_sequences.json
+          git apply --whitespace=error /tmp/candidate.patch
+          rm -rf .migration .github/workflows/publish-correctness.yml
+          git add -A
+          git diff --cached --check
+          test "$(git write-tree)" = 9667ae28199295612cc8f71f975daf35a0a7e0b7
+      - name: Commit and push final candidate
+        shell: bash
+        run: |
+          set -euo pipefail
+          git config user.name 'github-actions[bot]'
+          git config user.email '41898282+github-actions[bot]@users.noreply.github.com'
+          git commit -m 'fix: close execution correctness and account continuity'
+          git push origin HEAD:refs/heads/codex/gquant-correctness-operations-20260908
