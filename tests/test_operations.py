@@ -9,11 +9,13 @@ import pandas as pd
 import pytest
 
 from gquant.application.operations import (
+    _snapshot_prefix_sha256,
     initialize_account_state,
     parse_actual_events,
     require_complete_actual_sessions,
 )
 from gquant.config import CONFIG
+from gquant.infrastructure.data import Snapshot
 
 
 def test_actual_events_require_explicit_zero_fill_session() -> None:
@@ -75,3 +77,42 @@ def test_initial_manual_account_takeover_requires_explicit_risk_reset() -> None:
             {"cash": 500_000.0, "positions": []},
             risk_reset=False,
         )
+
+
+def _bars(rows: list[tuple[str, float]]) -> pd.DataFrame:
+    dates = pd.to_datetime([day for day, _ in rows])
+    closes = [close for _, close in rows]
+    return pd.DataFrame(
+        {
+            "date": dates,
+            "open": closes,
+            "high": [value + 1.0 for value in closes],
+            "low": [value - 1.0 for value in closes],
+            "close": closes,
+            "volume": [1_000_000.0] * len(rows),
+        }
+    )
+
+
+def test_snapshot_prefix_identity_allows_future_extension_but_rejects_history_revision() -> None:
+    through = pd.Timestamp("2026-08-28")
+    base = Snapshot(
+        bars={"sz300308": _bars([("2026-08-27", 100.0), ("2026-08-28", 101.0)])},
+        info={},
+    )
+    extended = Snapshot(
+        bars={
+            "sz300308": _bars(
+                [("2026-08-27", 100.0), ("2026-08-28", 101.0), ("2026-08-31", 999.0)]
+            )
+        },
+        info={},
+    )
+    revised = Snapshot(
+        bars={"sz300308": _bars([("2026-08-27", 100.0), ("2026-08-28", 102.0)])},
+        info={},
+    )
+
+    baseline = _snapshot_prefix_sha256(base, ["sz300308"], through)
+    assert _snapshot_prefix_sha256(extended, ["sz300308"], through) == baseline
+    assert _snapshot_prefix_sha256(revised, ["sz300308"], through) != baseline
