@@ -187,7 +187,7 @@ def vol_target_multiplier(
     ────────────────────────────────
     四家的组合层全部是**净值回撤驱动**: 先发生回撤, 再按整数档位砍敞口
     (track_trend dd_half/dd_full=0.11/0.13、glmcsm drawdown_cutoff/floor=
-    0.11/0.18、momentum 5%/12%/16%、glmqwen 自己的 dd_tiers/dd_abs_tiers)。
+    0.11/0.18、momentum 5%/12%/16%、gquant 自己的 dd_tiers/dd_abs_tiers)。
     这类机制有三个固有缺陷: 事后 (回撤已发生才反应)、滞后一档 (次日才生效)、
     阶跃 (0.70/0.45 这样的整数档)。
 

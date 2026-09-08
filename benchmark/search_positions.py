@@ -12,8 +12,9 @@ import contextlib
 import copy
 import io
 import sys
+from pathlib import Path
 
-sys.path.insert(0, "/tmp/qwenwork/trades/glmqwen")
+sys.path.insert(0, str(Path(__file__).resolve().parents[1]))
 
 from benchmark.targets import BASELINES, HOLDOUT          # noqa: E402
 from benchmark.scorecard import run_window, judge         # noqa: E402

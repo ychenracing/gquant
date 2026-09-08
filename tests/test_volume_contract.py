@@ -6,7 +6,7 @@ import pytest
 
 import fetch_data
 
-ROOT = Path(__file__).resolve().parents[2]
+ROOT = Path(__file__).resolve().parents[1]
 
 
 @pytest.mark.parametrize("symbol,expected", [
@@ -22,8 +22,8 @@ def test_tencent_raw_volume_units_are_board_specific(monkeypatch, symbol, expect
 
 def test_frozen_volumes_agree_with_independent_sina_overlap():
     checked = 0
-    for path in sorted((ROOT / "glmqwen/data").glob("*.csv")):
-        references = list((ROOT / "trae/glmcsm/data").glob(path.stem[2:] + "_*.csv"))
+    for path in sorted((ROOT / "data").glob("*.csv")):
+        references = list((ROOT / "tests/fixtures/volume-reference").glob(path.stem[2:] + "_*.csv"))
         if not references:
             continue
         current = pd.read_csv(path).set_index("date")["volume"]

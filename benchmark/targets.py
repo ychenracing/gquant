@@ -53,9 +53,9 @@ BASELINES = [
         "initial_capital": 2_000_000.0,
         "total_return": 10.6821,
         # 口径修正: glmcsm 同时报告 -16.63%(盘中) 与 -14.32%(收盘)。
-        # glmqwen 的 metrics.py 用的是**收盘**口径 (equity/cummax-1), 故同口径
-        # 比较必须取 -14.32%。初版误取 -16.63%, 使门槛对 glmqwen 偏松 2.31pp,
-        # 并让 glmcsm 那一行的回撤维度虚假通过 (glmqwen 收盘 -15.41% > 14.32%,
+        # gquant 的 metrics.py 用的是**收盘**口径 (equity/cummax-1), 故同口径
+        # 比较必须取 -14.32%。初版误取 -16.63%, 使门槛对 gquant 偏松 2.31pp,
+        # 并让 glmcsm 那一行的回撤维度虚假通过 (gquant 收盘 -15.41% > 14.32%,
         # 实为 FAIL)。另两套 (turtle_dual 用 marked-to-market assets、
         # track_trend 用 eq.cummax()) 经核实均为收盘口径, 无需修正。
         "max_drawdown": -0.1432,

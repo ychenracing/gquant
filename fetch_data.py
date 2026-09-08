@@ -1,9 +1,9 @@
 #!/usr/bin/env python3
 # -*- coding: utf-8 -*-
-"""拉取腾讯前复权日线数据，生成 glmqwen 策略的冻结数据快照。
+"""拉取腾讯前复权日线数据，生成 gquant 策略的冻结数据快照。
 
 数据源: web.ifzq.gtimg.cn (腾讯财经 fqkline 接口, 个股前复权, 指数不复权)
-输出: glmqwen/data/{code}.csv, 列序 date,open,high,low,close,volume,amount,name
+输出: gquant/data/{code}.csv, 列序 date,open,high,low,close,volume,amount,name
   - 价格: 前复权 (qfq, 以拉取日为基准)
   - volume: 股；沪市主板及深市 raw 为手 x100，科创板 raw 已为股；指数不参与交易，记 0
   - amount: volume x close 的名义代理，仅为兼容字段；策略/成交模型不读取

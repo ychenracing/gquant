@@ -100,7 +100,7 @@ def main() -> int:
     ]
     results = [evaluate(name) for name in names]
     print("=" * 104)
-    print("glmqwen economic edge ablation")
+    print("gquant economic edge ablation")
     print("=" * 104)
     for result in results:
         print(f"\n[{result['variant']}]")

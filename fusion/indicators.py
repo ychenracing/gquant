@@ -128,7 +128,7 @@ def market_metrics(
 ) -> pd.DataFrame:
     """市场层面指标 (状态机的全部输入), 基于 `universe` 全池而非持仓池。
 
-    状态机是内生的: EWI 与宽度都由 glmqwen 自己的 26 只标的池构造, 不使用任何
+    状态机是内生的: EWI 与宽度都由 gquant 自己的 26 只标的池构造, 不使用任何
     外部指数。这带来「换池即换状态机」的耦合, 局限见 fusion/regime.py 模块
     docstring 与 benchmark/ic_report.md。
     """

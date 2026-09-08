@@ -4,7 +4,7 @@
   python3 benchmark/ic_report.py            # 打印 IC 表并写入本目录 ic_report.md 的数据段
   python3 benchmark/ic_report.py --window 2025-04-01 2026-07-24
 
-这份报告回答一个问题: glmqwen 与四套基准之间约 1.2x 的收益缺口, 是参数没调好,
+这份报告回答一个问题: gquant 与四套基准之间约 1.2x 的收益缺口, 是参数没调好,
 还是架构上限。结论是后者, 依据如下三组实测。
 """
 

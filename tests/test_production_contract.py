@@ -1,7 +1,7 @@
-"""Production contract for the glmqwen default strategy path.
+"""Production contract for the gquant default strategy path.
 
 The contract is deliberately small:
-- keep glmqwen's native selection simple: ret63 -> top-2 -> daily rotation;
+- keep gquant's native selection simple: ret63 -> top-2 -> daily rotation;
 - use the already-implemented Turtle-style ATR risk budget by default.
 """
 from __future__ import annotations
@@ -11,7 +11,7 @@ import pytest
 from fusion.config import CONFIG
 
 
-def test_production_selection_stays_simple_and_glmqwen_native():
+def test_production_selection_stays_simple_and_gquant_native():
     """Do not import another strategy's parameter surface into production selection."""
     assert CONFIG["rebalance_mode"] == "daily_rotation"
     assert CONFIG["rank_factor"] == "ret63"

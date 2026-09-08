@@ -1,6 +1,6 @@
 #!/usr/bin/env python3
 # -*- coding: utf-8 -*-
-"""glmqwen 融合策略回测 CLI。
+"""gquant 融合策略回测 CLI。
 
 用法:
   python3 run_backtest.py                     # 默认参数全窗口回测
@@ -41,7 +41,7 @@ from fusion.metrics import compute_metrics, format_report, summarize
 
 
 def parse_args():
-    parser = argparse.ArgumentParser(description="glmqwen 融合策略回测")
+    parser = argparse.ArgumentParser(description="gquant 融合策略回测")
     parser.add_argument("--start", default=None)
     parser.add_argument("--end", default=None)
     parser.add_argument("--capital", type=float, default=None)

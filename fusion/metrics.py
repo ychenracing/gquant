@@ -65,7 +65,7 @@ def summarize(result) -> dict:
     return metrics
 
 
-def format_report(metrics: dict, title: str = "glmqwen 融合策略") -> str:
+def format_report(metrics: dict, title: str = "gquant 融合策略") -> str:
     lines = [
         "=" * 60,
         f"  {title} 绩效报告",

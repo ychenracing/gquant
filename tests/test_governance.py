@@ -360,16 +360,16 @@ def test_docstrings_match_code():
 
 
 def test_baseline_drawdown_is_close_basis():
-    """基准的回撤门槛必须与 glmqwen 同口径 (收盘), 否则判定偏松。
+    """基准的回撤门槛必须与 gquant 同口径 (收盘), 否则判定偏松。
 
     实测踩过的坑: glmcsm 同时报告 -16.63%(盘中) 与 -14.32%(收盘), 初版
-    targets.py 取了盘中值, 而 metrics.py 算的是收盘口径, 门槛因此对 glmqwen
+    targets.py 取了盘中值, 而 metrics.py 算的是收盘口径, 门槛因此对 gquant
     偏松 2.31pp, 使 glmcsm 行的回撤维度虚假通过、总分被高报为 3/4。
     """
     from benchmark.targets import BASELINES
     from fusion.metrics import compute_metrics
 
-    # glmqwen 自身的口径必须是收盘: compute_metrics 用 equity/cummax-1, 不含盘中 low
+    # gquant 自身的口径必须是收盘: compute_metrics 用 equity/cummax-1, 不含盘中 low
     src = inspect.getsource(compute_metrics)
     assert "cummax" in src and "low" not in src.replace("fillna", ""), \
         "metrics.compute_metrics 必须是收盘口径, 不得混入盘中 low"
