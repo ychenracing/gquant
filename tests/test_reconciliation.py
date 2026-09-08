@@ -109,6 +109,16 @@ def test_unplanned_or_oversized_actual_fill_fails_closed() -> None:
         )
 
 
+def test_authoritative_fill_requires_explicit_fees() -> None:
+    with pytest.raises(ValueError, match="actual fill fees must be numeric"):
+        apply_actual_fills(
+            _account(),
+            _full_exit(),
+            [{"symbol": "sz300308", "side": "sell", "shares": 100, "price": 100.0}],
+            pd.Timestamp("2026-08-31"),
+        )
+
+
 def test_split_scales_inventory_and_pending_order_then_cash_dividend_updates_cash() -> None:
     account = _account()
     pending = copy.deepcopy(_full_exit())
