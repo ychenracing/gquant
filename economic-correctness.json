@@ -1,0 +1,173 @@
+{
+  "standard_scorecard_metrics": [
+    {
+      "key": "turtle_5",
+      "total_return": 12.805495285732302,
+      "max_drawdown": -0.14173125040546797,
+      "sharpe": 4.075688769278101
+    },
+    {
+      "key": "track_trend_b",
+      "total_return": 12.573322214593757,
+      "max_drawdown": -0.14198472252361338,
+      "sharpe": 4.03881837408667
+    },
+    {
+      "key": "glmcsm_6",
+      "total_return": 15.26416111204782,
+      "max_drawdown": -0.14178210695573634,
+      "sharpe": 3.789892354172868
+    },
+    {
+      "key": "momentum",
+      "total_return": 12.573322214593757,
+      "max_drawdown": -0.14198472252361338,
+      "sharpe": 4.03881837408667
+    }
+  ],
+  "full_window": {
+    "total_return": 12.078268995636284,
+    "ann_return": 5.408493857161097,
+    "max_drawdown": -0.14173125040546797,
+    "sharpe": 3.795249516177514,
+    "calmar": 38.160207023421826,
+    "n_days": 346,
+    "final_equity": 26156537.99127257,
+    "round_trips": 150,
+    "avg_exposure": 0.6832272242841312,
+    "n_fills": 254
+  },
+  "continuous_2026_06_20_to_08_30": {
+    "requested": [
+      "2026-06-20",
+      "2026-08-30"
+    ],
+    "anchor": "2026-06-18",
+    "first_trading_day": "2026-06-22",
+    "last_trading_day": "2026-08-28",
+    "return": -0.02757322781761684,
+    "max_drawdown": -0.09508492076600927
+  },
+  "execution_ledger": {
+    "t1_violations": [],
+    "star_partial_sell_violations": [],
+    "pair_stop_fills": [
+      {
+        "date": "2025-08-26",
+        "symbol": "sz300502",
+        "side": "sell",
+        "shares": 14600,
+        "price": 201.112686,
+        "cash_after": 2996925.3586153616,
+        "reason": "extended_pair_stop"
+      },
+      {
+        "date": "2025-08-29",
+        "symbol": "sz300502",
+        "side": "sell",
+        "shares": 14300,
+        "price": 241.20356499,
+        "cash_after": 3554761.001363195,
+        "reason": "extended_pair_stop"
+      },
+      {
+        "date": "2025-09-02",
+        "symbol": "sz300308",
+        "side": "sell",
+        "shares": 9700,
+        "price": 386.1020115,
+        "cash_after": 3877457.33424975,
+        "reason": "extended_pair_stop"
+      },
+      {
+        "date": "2025-09-02",
+        "symbol": "sz300502",
+        "side": "sell",
+        "shares": 13400,
+        "price": 264.06629936999997,
+        "cash_after": 7413256.494614965,
+        "reason": "extended_pair_stop"
+      },
+      {
+        "date": "2025-09-04",
+        "symbol": "sz300308",
+        "side": "sell",
+        "shares": 5300,
+        "price": 405.26877555,
+        "cash_after": 5757569.59246424,
+        "reason": "extended_pair_stop"
+      },
+      {
+        "date": "2025-09-04",
+        "symbol": "sz300502",
+        "side": "sell",
+        "shares": 8000,
+        "price": 251.26110737999997,
+        "cash_after": 7766130.783971369,
+        "reason": "extended_pair_stop"
+      },
+      {
+        "date": "2025-09-26",
+        "symbol": "sz300308",
+        "side": "sell",
+        "shares": 8600,
+        "price": 413.29229399999997,
+        "cash_after": 4172038.9137832997,
+        "reason": "extended_pair_stop"
+      },
+      {
+        "date": "2025-09-30",
+        "symbol": "sz300502",
+        "side": "sell",
+        "shares": 13400,
+        "price": 263.916514305,
+        "cash_after": 3727849.797332936,
+        "reason": "extended_pair_stop"
+      }
+    ]
+  },
+  "cost_sensitivity": [
+    {
+      "slippage_bps": 10.0,
+      "key": "track_trend_b",
+      "total_return": 12.573322214593757,
+      "max_drawdown": -0.14198472252361338,
+      "sharpe": 4.03881837408667
+    },
+    {
+      "slippage_bps": 10.0,
+      "key": "glmcsm_6",
+      "total_return": 15.26416111204782,
+      "max_drawdown": -0.14178210695573634,
+      "sharpe": 3.789892354172868
+    },
+    {
+      "slippage_bps": 15.0,
+      "key": "track_trend_b",
+      "total_return": 12.20943397165111,
+      "max_drawdown": -0.14219887716673596,
+      "sharpe": 3.996989898578614
+    },
+    {
+      "slippage_bps": 15.0,
+      "key": "glmcsm_6",
+      "total_return": 14.214559231418777,
+      "max_drawdown": -0.1441495910446292,
+      "sharpe": 3.7047357517547623
+    },
+    {
+      "slippage_bps": 20.0,
+      "key": "track_trend_b",
+      "total_return": 12.046116589055522,
+      "max_drawdown": -0.14341926603862143,
+      "sharpe": 3.9802523325906316
+    },
+    {
+      "slippage_bps": 20.0,
+      "key": "glmcsm_6",
+      "total_return": 13.717221229603311,
+      "max_drawdown": -0.14640641098078866,
+      "sharpe": 3.664646137124946
+    }
+  ]
+}

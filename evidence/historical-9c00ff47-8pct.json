@@ -1,0 +1,235 @@
+{
+  "rows": [
+    {
+      "key": "turtle_5",
+      "window": [
+        "2025-04-01",
+        "2026-07-20"
+      ],
+      "provenance": "MEASURED",
+      "pass": false,
+      "verdict": {
+        "return": false,
+        "drawdown": false
+      },
+      "baseline": {
+        "total_return": 11.15992376,
+        "max_drawdown": -0.15857336,
+        "sharpe": null
+      },
+      "glmqwen": {
+        "total_return": 10.021090718891438,
+        "max_drawdown": -0.1727679722681249,
+        "sharpe": 3.7903892650622066,
+        "calmar": 32.85584130829084,
+        "avg_exposure": 0.7198236815116575,
+        "n_fills": 247,
+        "regime_days": {
+          "TREND": 190,
+          "WEAKEN": 69,
+          "CRASH": 54,
+          "RECOVERY": 3
+        },
+        "exposure_by_regime": {
+          "CRASH": 0.0408,
+          "RECOVERY": 0.0,
+          "TREND": 0.9232,
+          "WEAKEN": 0.7226
+        },
+        "sell_reasons": {
+          "rebalance_trim": 76,
+          "rotation_exit": 32,
+          "risk_off_trim": 19,
+          "regime_crash": 7,
+          "extended_pair_stop": 5,
+          "core_trend_break": 3,
+          "crash_day_exit": 3,
+          "extended_pair_stop_deferred": 1
+        },
+        "stress": {
+          "in_window": true,
+          "return": -0.02750753100800174,
+          "max_drawdown": -0.031145574682287736
+        }
+      },
+      "sweep": null
+    },
+    {
+      "key": "track_trend_b",
+      "window": [
+        "2025-04-01",
+        "2026-07-24"
+      ],
+      "provenance": "MEASURED",
+      "pass": false,
+      "verdict": {
+        "return": false,
+        "drawdown": false,
+        "sharpe": true
+      },
+      "baseline": {
+        "total_return": 11.551,
+        "max_drawdown": -0.163,
+        "sharpe": 3.57
+      },
+      "glmqwen": {
+        "total_return": 10.555267035814504,
+        "max_drawdown": -0.1662714897906694,
+        "sharpe": 3.8399074249052996,
+        "calmar": 34.67493279389223,
+        "avg_exposure": 0.7149815376176941,
+        "n_fills": 212,
+        "regime_days": {
+          "TREND": 190,
+          "WEAKEN": 69,
+          "CRASH": 58,
+          "RECOVERY": 3
+        },
+        "exposure_by_regime": {
+          "CRASH": 0.0305,
+          "RECOVERY": 0.0,
+          "TREND": 0.9318,
+          "WEAKEN": 0.7244
+        },
+        "sell_reasons": {
+          "rebalance_trim": 49,
+          "rotation_exit": 31,
+          "risk_off_trim": 23,
+          "extended_pair_stop": 7,
+          "regime_crash": 4,
+          "core_trend_break": 3,
+          "crash_day_exit": 3
+        },
+        "stress": {
+          "in_window": true,
+          "return": -0.026750535656737684,
+          "max_drawdown": -0.030878358692028707
+        }
+      },
+      "sweep": null
+    },
+    {
+      "key": "glmcsm_6",
+      "window": [
+        "2025-01-02",
+        "2026-07-24"
+      ],
+      "provenance": "MEASURED",
+      "pass": false,
+      "verdict": {
+        "return": true,
+        "drawdown": false,
+        "sharpe": false
+      },
+      "baseline": {
+        "total_return": 10.6821,
+        "max_drawdown": -0.1432,
+        "sharpe": 3.69
+      },
+      "glmqwen": {
+        "total_return": 12.778085766080848,
+        "max_drawdown": -0.14417005557656326,
+        "sharpe": 3.6118132549232964,
+        "calmar": 32.559939139545726,
+        "avg_exposure": 0.6861109663589682,
+        "n_fills": 307,
+        "regime_days": {
+          "TREND": 210,
+          "WEAKEN": 84,
+          "CRASH": 77,
+          "RECOVERY": 6
+        },
+        "exposure_by_regime": {
+          "CRASH": 0.0506,
+          "RECOVERY": 0.2016,
+          "TREND": 0.928,
+          "WEAKEN": 0.6985
+        },
+        "sell_reasons": {
+          "rebalance_trim": 93,
+          "rotation_exit": 32,
+          "risk_off_trim": 23,
+          "regime_crash": 14,
+          "core_trend_break": 13,
+          "extended_pair_stop": 7,
+          "crash_day_exit": 5
+        },
+        "stress": {
+          "in_window": true,
+          "return": -0.027939348695310784,
+          "max_drawdown": -0.03287162604205829
+        }
+      },
+      "sweep": null
+    },
+    {
+      "key": "momentum",
+      "window": [
+        "2025-04-01",
+        "2026-07-24"
+      ],
+      "provenance": "REPORTED",
+      "pass": false,
+      "verdict": {
+        "return": true,
+        "drawdown": false,
+        "sharpe": false
+      },
+      "baseline": {
+        "total_return": 10.5442,
+        "max_drawdown": -0.1519,
+        "sharpe": 3.96
+      },
+      "glmqwen": {
+        "total_return": 10.555267035814504,
+        "max_drawdown": -0.1662714897906694,
+        "sharpe": 3.8399074249052996,
+        "calmar": 34.67493279389223,
+        "avg_exposure": 0.7149815376176941,
+        "n_fills": 212,
+        "regime_days": {
+          "TREND": 190,
+          "WEAKEN": 69,
+          "CRASH": 58,
+          "RECOVERY": 3
+        },
+        "exposure_by_regime": {
+          "CRASH": 0.0305,
+          "RECOVERY": 0.0,
+          "TREND": 0.9318,
+          "WEAKEN": 0.7244
+        },
+        "sell_reasons": {
+          "rebalance_trim": 49,
+          "rotation_exit": 31,
+          "risk_off_trim": 23,
+          "extended_pair_stop": 7,
+          "regime_crash": 4,
+          "core_trend_break": 3,
+          "crash_day_exit": 3
+        },
+        "stress": {
+          "in_window": true,
+          "return": -0.026750535656737684,
+          "max_drawdown": -0.030878358692028707
+        }
+      },
+      "sweep": null
+    }
+  ],
+  "all_pass": false,
+  "holdout": {
+    "total_return": -0.12173917831824665,
+    "max_drawdown": -0.24077194443859484,
+    "sharpe": -0.2171964897196988,
+    "calmar": -0.5232605248478002,
+    "avg_exposure": 0.4703981797872319,
+    "n_fills": 225,
+    "regime_days": {
+      "TREND": 104,
+      "CRASH": 72,
+      "WEAKEN": 49,
+      "RECOVERY": 16
+    }
+  }
+}
