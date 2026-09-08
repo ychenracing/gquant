@@ -8,10 +8,13 @@ on:
 permissions:
   contents: write
 
+concurrency:
+  group: rebuild-gquant-sequence-digests-${{ github.ref }}
+  cancel-in-progress: true
+
 # Temporary recovery workflow. It deterministically regenerates the active 24-case
-# digest fixture from preserved case requests. If source-only admission logic changed,
-# it first proves the existing six economic oracle trajectories are unchanged before
-# refreshing that oracle's source behavior hash.
+# digest fixture from preserved case requests. It first proves the six existing
+# economic trajectories are unchanged before refreshing source identity.
 jobs:
   rebuild:
     runs-on: windows-2025
@@ -20,6 +23,9 @@ jobs:
       run:
         shell: bash
     steps:
+      - name: Preserve repository line endings
+        shell: pwsh
+        run: git config --global core.autocrlf false
       - uses: actions/checkout@11bd71901bbe5b1630ceea73d27597364c9af683
         with:
           fetch-depth: 0
@@ -64,7 +70,7 @@ jobs:
                   relative = str(path.relative_to(root)).replace('\\', '/')
                   hasher.update(relative.encode())
                   hasher.update(b'\0')
-                  hasher.update(path.read_bytes())
+                  hasher.update(path.read_bytes().replace(b'\r\n', b'\n'))
                   hasher.update(b'\0')
               return hasher.hexdigest()
 
@@ -138,7 +144,9 @@ jobs:
               'producer_parent_sha': '772e7650e258b9484b7400aab6d092bbce4998a1',
               'behavior_sha256': behavior,
               'default_config': CONFIG,
-              'data_sha256sums': hashlib.sha256((root / 'data/SHA256SUMS').read_bytes()).hexdigest(),
+              'data_sha256sums': hashlib.sha256(
+                  (root / 'data/SHA256SUMS').read_bytes().replace(b'\r\n', b'\n')
+              ).hexdigest(),
               'cases': cases,
           }
           target = root / 'tests/fixtures/economic-sequence-digests.json'
