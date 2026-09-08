@@ -12,7 +12,7 @@ permissions:
 # digest fixture from the preserved pre-correctness case requests and current source.
 jobs:
   rebuild:
-    runs-on: ubuntu-latest
+    runs-on: macos-latest
     timeout-minutes: 35
     steps:
       - uses: actions/checkout@11bd71901bbe5b1630ceea73d27597364c9af683
