@@ -16,7 +16,6 @@ from gquant.portfolio.accounting import trade_cost
 from gquant.portfolio.models import Account, Fill, Position
 from gquant.research.robustness import diagnostic_configs
 
-
 REQUIRED_MODULES = (
     "gquant.application.operations",
     "gquant.application.runtime",
