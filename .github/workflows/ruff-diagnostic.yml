@@ -1,0 +1,29 @@
+name: Ruff import diagnostic
+
+on:
+  push:
+    branches: [codex/gquant-correctness-operations-20260908]
+    paths: ['.github/workflows/ruff-diagnostic.yml']
+
+permissions:
+  contents: read
+
+jobs:
+  diagnose:
+    runs-on: ubuntu-latest
+    timeout-minutes: 5
+    steps:
+      - uses: actions/checkout@fbc6f3992d24b796d5a048ff273f7fcc4a7b6c09
+        with:
+          ref: ${{ github.sha }}
+          persist-credentials: false
+      - uses: actions/setup-python@ece7cb06caefa5fff74198d8649806c4678c61a1
+        with:
+          python-version: '3.12.14'
+      - name: Show Ruff's exact import fix
+        run: |
+          python -m pip install --disable-pip-version-check ruff==0.12.12
+          python -m ruff check --fix --diff tests/test_recovery_modules.py || true
+          echo '--- fixed file import prefix ---'
+          python -m ruff check --fix tests/test_recovery_modules.py
+          sed -n '1,24p' tests/test_recovery_modules.py
