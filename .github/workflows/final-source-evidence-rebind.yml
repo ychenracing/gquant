@@ -237,7 +237,7 @@ jobs:
           assert rows['glmcsm_6']['verdict'] == {'return': True, 'drawdown': False, 'sharpe': True}
           assert report['full_window']['total_return'] == pytest.approx(12.073443491514363)
           assert report['full_window']['max_drawdown'] == pytest.approx(-0.1407956526125117)
-          assert report['continuous_interval']['metrics']['total_return'] == pytest.approx(-0.02762197368224517)
+          assert report['continuous_interval']['return'] == pytest.approx(-0.02762197368224517)
           PY
           git diff --check
       - name: Commit source fixes and rebound evidence
