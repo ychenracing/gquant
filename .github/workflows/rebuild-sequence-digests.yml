@@ -9,7 +9,9 @@ permissions:
   contents: write
 
 # Temporary recovery workflow. It deterministically regenerates the active 24-case
-# digest fixture from the preserved pre-correctness case requests and current source.
+# digest fixture from preserved case requests. If source-only admission logic changed,
+# it first proves the existing six economic oracle trajectories are unchanged before
+# refreshing that oracle's source behavior hash.
 jobs:
   rebuild:
     runs-on: macos-latest
@@ -36,6 +38,7 @@ jobs:
 
           import hashlib
           import json
+          import math
           from pathlib import Path
 
           from gquant.application.engine import BacktestEngine
@@ -83,6 +86,32 @@ jobs:
                   for fill in result.trades
               ]
 
+          behavior = behavior_sha()
+
+          # The new start-boundary rejection must not alter any previously valid economic
+          # scenario. Prove every existing oracle trajectory before changing source identity.
+          oracle_path = root / 'tests/fixtures/economic-oracle.json'
+          oracle = json.loads(oracle_path.read_text(encoding='utf-8'))
+          for case in oracle['scenarios']:
+              request = {key: case[key] for key in ('start', 'end', 'initial_capital')}
+              result = BacktestEngine(make_config(request), root / 'data').run()
+              metrics = summarize(result)
+              if digest(trace(result)) != case['account_sha256']:
+                  raise SystemExit(f"oracle account drift: {case['name']}")
+              if digest(fills(result)) != case['fills_sha256']:
+                  raise SystemExit(f"oracle fill drift: {case['name']}")
+              if digest(result.events) != case['events_sha256']:
+                  raise SystemExit(f"oracle event drift: {case['name']}")
+              for key in ('total_return', 'max_drawdown', 'sharpe', 'final_equity'):
+                  if not math.isclose(
+                      float(metrics[key]), float(case['metrics'][key]), rel_tol=1e-12, abs_tol=1e-10
+                  ):
+                      raise SystemExit(f"oracle metric drift: {case['name']} {key}")
+          oracle['behavior_sha256'] = behavior
+          oracle_path.write_text(
+              json.dumps(oracle, ensure_ascii=False, indent=2) + '\n', encoding='utf-8'
+          )
+
           cases = []
           for old in preserved['cases']:
               request = old['request']
@@ -107,24 +136,24 @@ jobs:
           output = {
               'source_repository': 'ychenracing/gquant',
               'producer_parent_sha': '772e7650e258b9484b7400aab6d092bbce4998a1',
-              'behavior_sha256': behavior_sha(),
+              'behavior_sha256': behavior,
               'default_config': CONFIG,
               'data_sha256sums': hashlib.sha256((root / 'data/SHA256SUMS').read_bytes()).hexdigest(),
               'cases': cases,
           }
           target = root / 'tests/fixtures/economic-sequence-digests.json'
           target.write_text(json.dumps(output, ensure_ascii=False, indent=2) + '\n', encoding='utf-8')
-          print(f'generated {len(cases)} cases, behavior_sha256={output["behavior_sha256"]}')
+          print(f'generated {len(cases)} cases, behavior_sha256={behavior}')
           PY
-          python -m pytest -q tests/test_economic_sequences.py
+          python -m pytest -q tests/test_economic_oracle.py tests/test_economic_sequences.py
           git diff --check
-      - name: Commit fixture only
+      - name: Commit verified active evidence fixtures
         shell: bash
         run: |
           set -euo pipefail
           git config user.name 'github-actions[bot]'
           git config user.email '41898282+github-actions[bot]@users.noreply.github.com'
-          git add tests/fixtures/economic-sequence-digests.json
+          git add tests/fixtures/economic-oracle.json tests/fixtures/economic-sequence-digests.json
           git diff --cached --check
-          git commit -m 'test: restore current economic sequence digests'
+          git commit -m 'test: restore current economic evidence identities'
           git push origin HEAD:refs/heads/codex/gquant-correctness-operations-20260908
