@@ -40,11 +40,11 @@ python -m gquant account-init \
   --output outputs/account
 ```
 
-`--risk-reset`不是交易指令，而是证据边界：接管日之前的真实账户风险历史未知，从该日开始重新建立组合高水位和冷却状态。输出包含`state.json`、`account.json`、`next_orders.json`、`reconciliations.json`、配置和身份。`next_orders.json`只是下一交易日的人工决策清单，不会发送给券商。
+`--risk-reset`不是交易指令，而是证据边界：接管日之前的真实账户风险历史未知，从该日开始重新建立组合高水位和冷却状态。输出包含`state.json`、`account.json`、`next_orders.json`、`reconciliations.json`、配置和身份。`state.json`同时封存截至接管日的OHLCV历史前缀身份；后续可以追加未来交易日，但已处理历史被修订时续接会拒绝运行。`next_orders.json`只是下一交易日的人工决策清单，不会发送给券商。
 
 ## 用实际成交继续账户
 
-券商实际成交和公司行动通过显式JSON输入。一个交易日即使完全没有成交，也应提供空`fills`数组，表示该会话的实际回报是权威的“零成交”。
+券商实际成交和公司行动通过显式JSON输入。一个交易日即使完全没有成交，也应提供空`fills`数组，表示该会话的实际回报是权威的“零成交”。每笔实际成交必须显式提供`fees`；若真实费用为零也写`"fees": 0`，系统不会把缺失费用静默当作零。
 
 ```json
 {
@@ -84,7 +84,7 @@ python -m gquant resume-account \
   --output outputs/account-next
 ```
 
-实际成交会更新真实现金和库存，并记录与计划数量的偏差；未完成的完整退出会继续保留为待办。实际回报不会被伪装成模拟成交。系统仍不连接券商、不提交订单。
+实际成交会更新真实现金和库存，并记录与计划数量的偏差；未完成的完整退出会继续保留为待办。续接前会核对保存日及以前的已准入行情前缀，历史数据发生修订时直接失败；单纯增加后续交易日不会破坏续接。实际回报不会被伪装成模拟成交。系统仍不连接券商、不提交订单。
 
 ## 模拟账户连续区间
 
@@ -102,9 +102,11 @@ python -m gquant resume-account \
 |---|---|
 | snapshot hash mismatch | 数据字节与清单不一致；恢复完整正确快照，不改哈希掩盖变更 |
 | duplicate/invalid snapshot date | 日期重复、为空或不合法；拒绝静默去重 |
-| requested end exceeds snapshot | 请求窗口晚于快照；补齐数据或缩短请求，不静默截短 |
+| requested start precedes snapshot | 请求起点早于快照；补齐历史或缩短请求，不静默截短 |
+| requested end exceeds snapshot | 请求终点晚于快照；补齐数据或缩短请求，不静默截短 |
 | unknown configuration field | 参数名拼写或配置面不合法 |
 | initial account takeover requires explicit --risk-reset | 首次人工账户接管缺少明确风险重置边界 |
+| admitted data history differs from saved account state | 保存日及以前的行情已变化；不得把旧账户/风险状态接到修订后的历史上 |
 | publication writer is active | 同一输出目录已有写入者；先核实任务和锁状态 |
 
 报告目录默认不入Git。需要保留证据时保存整个代次、源码身份、环境、配置和输入身份，而不是只复制收益数字。
