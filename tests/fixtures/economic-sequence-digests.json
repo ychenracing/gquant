@@ -1,0 +1,772 @@
+{
+  "source_repository": "ychenracing/gquant",
+  "producer_parent_sha": "772e7650e258b9484b7400aab6d092bbce4998a1",
+  "behavior_sha256": "7488d1e84f1bba34cda53a8de8c2d304109dfa92421581a0d0414a9260f063ea",
+  "default_config": {
+    "universe": [
+      "sz300308",
+      "sz300502",
+      "sz300394",
+      "sh688498",
+      "sz002281",
+      "sh601869",
+      "sh688008",
+      "sh603986",
+      "sz300223",
+      "sh688256",
+      "sh688041",
+      "sz002371",
+      "sh688012",
+      "sh688072",
+      "sh688082",
+      "sh688120",
+      "sh688037",
+      "sh688361",
+      "sz300604",
+      "sh688019",
+      "sz300054",
+      "sz002409",
+      "sz300666",
+      "sh688268",
+      "sh688300",
+      "sz300776"
+    ],
+    "core_universe": [
+      "sz300308",
+      "sz300502",
+      "sz300394",
+      "sh688498",
+      "sh601869",
+      "sh688008",
+      "sh603986"
+    ],
+    "start": "2025-04-01",
+    "end": "2026-08-31",
+    "initial_capital": 2000000.0,
+    "commission_bps": 2.5,
+    "min_commission": 5.0,
+    "stamp_tax_bps": 5.0,
+    "transfer_fee_bps": 0.1,
+    "slippage_bps": 10.0,
+    "limit_ratio_main": 0.099,
+    "limit_ratio_gem": 0.199,
+    "max_adv_participation": 0.08,
+    "chase_limit_pct": 0.07,
+    "momentum_blend": {
+      "ret5": 0.25,
+      "ret14": 0.35,
+      "ret63": 0.4
+    },
+    "score_weights": {
+      "momentum": 0.55,
+      "trend": 0.25,
+      "volume": 0.2
+    },
+    "trend_ma": 28,
+    "fast_ma": 10,
+    "breakout_window": 20,
+    "breakout_proximity": 0.98,
+    "atr_window": 20,
+    "channel_atr_mult": 1.5,
+    "volume_fast": 5,
+    "volume_slow": 60,
+    "volume_min_ratio": 0.9,
+    "max_positions": 2,
+    "vote_min": 4,
+    "entry_mode": "vote_gate",
+    "rank_factor": "ret63",
+    "rebalance_mode": "daily_rotation",
+    "rotation_drift_tol": 1.0,
+    "rotation_gap_frac": 0.05,
+    "rotation_rank_weights": [
+      1.0,
+      1.0
+    ],
+    "rotation_sizing": "atr_risk_budget",
+    "rotation_risk_pct": 0.045,
+    "rotation_atr_floor_pct": 0.02,
+    "max_single_weight": 0.5,
+    "rotation_contract": {
+      "hysteresis": false,
+      "hold_rank": 3,
+      "switch_edge_atr": 0.5,
+      "confirm_factors": [
+        "ret50",
+        "ret80"
+      ],
+      "tail_risk": false,
+      "tail_lookback": 20,
+      "per_name_loss_budget": 0.06,
+      "common_risk": false,
+      "common_vol_lookback": 20,
+      "common_vol_cap": 0.06,
+      "pair_stop": true,
+      "pair_stop_market_ext": 0.14,
+      "pair_stop_corr20": 0.7
+    },
+    "hard_stop_pct": 0.12,
+    "chandelier_tiers": [
+      {
+        "profit": 0.08,
+        "atr_mult": 3.5
+      },
+      {
+        "profit": 0.2,
+        "atr_mult": 2.8
+      },
+      {
+        "profit": 0.5,
+        "atr_mult": 2.4
+      },
+      {
+        "profit": 1000000000.0,
+        "atr_mult": 2.1
+      }
+    ],
+    "min_trade_value": 50000.0,
+    "rebalance_drift_tol": 1.4,
+    "regime_ma": 25,
+    "regime_reclaim_ma": 10,
+    "regime_reclaim_days": 1,
+    "breadth_weak": 0.38,
+    "breadth_strong": 0.5,
+    "breadth_crash": 0.1,
+    "breadth_crash_ret5": -0.03,
+    "ewi_ret5_crash": -0.12,
+    "ewi_ret5_weaken": -0.06,
+    "single_day_crash_pct": -0.08,
+    "corr_sell_pct": -0.045,
+    "corr_liquidation_count": 6,
+    "corr_flat_days": 14,
+    "two_day_crash_pct": -0.12,
+    "trend_break_days": 2,
+    "no_topup_ext": 0.15,
+    "recovery_mom_min": 0.01,
+    "recovery_high_gap": 0.1,
+    "exposure_caps": {
+      "TREND": 1.0,
+      "WEAKEN": 0.8,
+      "CRASH": 0.0,
+      "RECOVERY": 1.0
+    },
+    "pyramid_boost1": 0.2,
+    "pyramid_boost1_mult": 1.3,
+    "pyramid_boost2": 0.6,
+    "pyramid_boost2_mult": 1.6,
+    "winner_base_weight": 1.0,
+    "winner_tilt": 2.5,
+    "winner_tilt_factor": "volume",
+    "winner_slot_mult": 1.25,
+    "topup_cooldown_days": 5,
+    "peak_window": 40,
+    "absolute_dd_floor_trigger": -0.21,
+    "abs_floor_rearm": -0.12,
+    "dd_tiers": [
+      {
+        "dd": 0.12,
+        "target": 0.55
+      },
+      {
+        "dd": 0.16,
+        "target": 0.25
+      },
+      {
+        "dd": 0.2,
+        "target": 0.0
+      }
+    ],
+    "dd_abs_tiers": [
+      {
+        "dd": 0.105,
+        "target": 0.78
+      },
+      {
+        "dd": 0.145,
+        "target": 0.52
+      }
+    ],
+    "dd_abs_release_on_heal": true,
+    "deep_dd_floor": 0.25,
+    "ramp_step": 0.4,
+    "market_heal_bounce": 0.08,
+    "universe_keep": 26,
+    "crash_escape_ret5": 0.06,
+    "crash_escape_breadth": 0.4,
+    "decay_trigger": -0.02,
+    "decay_min_ext": 0.08,
+    "decay_cap": 0.55,
+    "heal_breadth": 0.45,
+    "trend_through_ret20": 0.1,
+    "flat_cooldown_days": 4,
+    "vol_target_daily": 0.0,
+    "vol_target_lookback": 20,
+    "pulse_threshold": -0.065,
+    "pulse_trim": 0.25,
+    "pulse_cooldown_days": 3
+  },
+  "data_sha256sums": "d4563e074d149b7bcebb1ec633cff5977b49c66a5352ef9b49ebdf9b0ed30f0d",
+  "cases": [
+    {
+      "names": [
+        "full"
+      ],
+      "request": {
+        "start": "2025-04-01",
+        "end": "2026-08-31",
+        "initial_capital": 2000000.0,
+        "slippage_bps": 10.0,
+        "max_adv_participation": 0.08
+      },
+      "days": 346,
+      "fills_count": 254,
+      "trace_sha256": "a394994ba0bbaac23ce245bd467c92fd2330fd204c90ac1d4e74b04b4f79fff7",
+      "fills_sha256": "289c4f1a7c059f09dd02b8c09203cd21da8a6864f577b495c3806fb7581b504c",
+      "events_sha256": "f437b75ce5c3705abcfdc0ef7b53b5872338be09d714707381d497e5df49b93d",
+      "metrics": {
+        "total_return": 12.073443491514363,
+        "max_drawdown": -0.1407956526125117,
+        "sharpe": 3.794502602289237,
+        "final_equity": 26146886.983028725
+      }
+    },
+    {
+      "names": [
+        "diagnostic"
+      ],
+      "request": {
+        "start": "2024-04-01",
+        "end": "2025-03-31",
+        "initial_capital": 2000000.0,
+        "slippage_bps": 10.0,
+        "max_adv_participation": 0.08
+      },
+      "days": 241,
+      "fills_count": 226,
+      "trace_sha256": "63171f023db495fb041a473b0ac7d9c4683603fbb0acacc098e3b169dd5c239b",
+      "fills_sha256": "39e2cb79bcef7877a9c421ec781a73c0e60f5710ae2ae87f6b41feec0d97b4fd",
+      "events_sha256": "0b46ea4d41803644c9caff9282d781b68f9ee63f84c2f22832d8ecf19ba2774e",
+      "metrics": {
+        "total_return": -0.10655803171094247,
+        "max_drawdown": -0.2573305041711679,
+        "sharpe": -0.15768015763327692,
+        "final_equity": 1786883.936578115
+      }
+    },
+    {
+      "names": [
+        "turtle_5",
+        "capital:turtle_5:2000000.0"
+      ],
+      "request": {
+        "start": "2025-04-01",
+        "end": "2026-07-20",
+        "initial_capital": 2000000.0,
+        "slippage_bps": 10.0,
+        "max_adv_participation": 0.08
+      },
+      "days": 316,
+      "fills_count": 248,
+      "trace_sha256": "309d9928b91dade3f383dcc05686d639a2f59118b1151fec9ce25c2a98f44473",
+      "fills_sha256": "948daeb2bbe9a033d4b5ebb05eada5b0548fba798cac653fc0af69c4ace7a12d",
+      "events_sha256": "2e5aefa3d05760509438420d2ef0f3ec70a660d452660a6c05dd438ee2973be7",
+      "metrics": {
+        "total_return": 12.800669781610381,
+        "max_drawdown": -0.1407956526125117,
+        "sharpe": 4.074925819317687,
+        "final_equity": 27601339.56322076
+      }
+    },
+    {
+      "names": [
+        "capital:turtle_5:1000000.0"
+      ],
+      "request": {
+        "start": "2025-04-01",
+        "end": "2026-07-20",
+        "initial_capital": 1000000.0,
+        "slippage_bps": 10.0,
+        "max_adv_participation": 0.08
+      },
+      "days": 316,
+      "fills_count": 217,
+      "trace_sha256": "7d6b7097348957ac58a6e233b5aab3e75dcd1011fddecffb8845044ddced0b87",
+      "fills_sha256": "43c30e957539e3c5c1c6fce541f2422b7ab5bc293d7d254743e15a44714f8d34",
+      "events_sha256": "a80500cbd3c3a3258b7f268cc8d3cc890830feec6e9dcdff19c1e711d847f526",
+      "metrics": {
+        "total_return": 12.613821543253675,
+        "max_drawdown": -0.14084558420677717,
+        "sharpe": 4.069420968691889,
+        "final_equity": 13613821.543253675
+      }
+    },
+    {
+      "names": [
+        "capital:turtle_5:5000000.0"
+      ],
+      "request": {
+        "start": "2025-04-01",
+        "end": "2026-07-20",
+        "initial_capital": 5000000.0,
+        "slippage_bps": 10.0,
+        "max_adv_participation": 0.08
+      },
+      "days": 316,
+      "fills_count": 276,
+      "trace_sha256": "1961815cc6157509d67a309b2d24766dace7a80f83d5484fe182d00405130699",
+      "fills_sha256": "d475c490e8327b5506374af320d9d5a59d96008a54d0fa126d5a2890303db0a9",
+      "events_sha256": "2e5aefa3d05760509438420d2ef0f3ec70a660d452660a6c05dd438ee2973be7",
+      "metrics": {
+        "total_return": 12.849887739100165,
+        "max_drawdown": -0.14083318407058898,
+        "sharpe": 4.08199344631873,
+        "final_equity": 69249438.69550082
+      }
+    },
+    {
+      "names": [
+        "capital:turtle_5:10000000.0"
+      ],
+      "request": {
+        "start": "2025-04-01",
+        "end": "2026-07-20",
+        "initial_capital": 10000000.0,
+        "slippage_bps": 10.0,
+        "max_adv_participation": 0.08
+      },
+      "days": 316,
+      "fills_count": 285,
+      "trace_sha256": "74869cb6024563f7714ba831ec495bd60b41765f48185debfc3385cf0eebf732",
+      "fills_sha256": "00a3bd9b7c978eb14b3c7dd282d8b202c9336b684de124f8cbd505c08b900585",
+      "events_sha256": "9e40e1ccd2ec02808e4984ef202b36c32c4584e1699aff2ca60aff43af5cff45",
+      "metrics": {
+        "total_return": 12.808461102824383,
+        "max_drawdown": -0.14087487976268886,
+        "sharpe": 4.077706196231892,
+        "final_equity": 138084611.02824384
+      }
+    },
+    {
+      "names": [
+        "capital:turtle_5:30000000.0"
+      ],
+      "request": {
+        "start": "2025-04-01",
+        "end": "2026-07-20",
+        "initial_capital": 30000000.0,
+        "slippage_bps": 10.0,
+        "max_adv_participation": 0.08
+      },
+      "days": 316,
+      "fills_count": 300,
+      "trace_sha256": "f8a7e6375fd1c99ff85a38562b250434109516d26165ec1c208cd33b5c437481",
+      "fills_sha256": "9c461f3b74c42df610ec20eb717cf52eae7dce281a59cbf1e54759b35bfa4f96",
+      "events_sha256": "9e40e1ccd2ec02808e4984ef202b36c32c4584e1699aff2ca60aff43af5cff45",
+      "metrics": {
+        "total_return": 12.709052592244394,
+        "max_drawdown": -0.1408302462917308,
+        "sharpe": 4.068278070612899,
+        "final_equity": 411271577.76733184
+      }
+    },
+    {
+      "names": [
+        "capital:turtle_5:100000000.0"
+      ],
+      "request": {
+        "start": "2025-04-01",
+        "end": "2026-07-20",
+        "initial_capital": 100000000.0,
+        "slippage_bps": 10.0,
+        "max_adv_participation": 0.08
+      },
+      "days": 316,
+      "fills_count": 305,
+      "trace_sha256": "854b755a504bf0baebcd7c67e320c602c12f60b176e9cfe511dda01263aac826",
+      "fills_sha256": "32f8a92d5f4a43724f08bb4d44543c58ed3587ad4f09f50f28622289534787ae",
+      "events_sha256": "30946eb7b32c62494d2571523a6d83fefca9f0b12b7ab7d9bad0fdcf84951510",
+      "metrics": {
+        "total_return": 9.790314156330307,
+        "max_drawdown": -0.16779577600194218,
+        "sharpe": 3.8005497114327436,
+        "final_equity": 1079031415.6330307
+      }
+    },
+    {
+      "names": [
+        "track_trend_b",
+        "capital:track_trend_b:1000000.0",
+        "momentum",
+        "capital:momentum:1000000.0"
+      ],
+      "request": {
+        "start": "2025-04-01",
+        "end": "2026-07-24",
+        "initial_capital": 1000000.0,
+        "slippage_bps": 10.0,
+        "max_adv_participation": 0.08
+      },
+      "days": 320,
+      "fills_count": 217,
+      "trace_sha256": "3a18b0639a5383a2943df564106eb68ac0874021434c8c74295da6e9e00ae00e",
+      "fills_sha256": "43c30e957539e3c5c1c6fce541f2422b7ab5bc293d7d254743e15a44714f8d34",
+      "events_sha256": "a80500cbd3c3a3258b7f268cc8d3cc890830feec6e9dcdff19c1e711d847f526",
+      "metrics": {
+        "total_return": 12.613821543253675,
+        "max_drawdown": -0.14084558420677717,
+        "sharpe": 4.042223872607956,
+        "final_equity": 13613821.543253675
+      }
+    },
+    {
+      "names": [
+        "capital:track_trend_b:2000000.0",
+        "capital:momentum:2000000.0"
+      ],
+      "request": {
+        "start": "2025-04-01",
+        "end": "2026-07-24",
+        "initial_capital": 2000000.0,
+        "slippage_bps": 10.0,
+        "max_adv_participation": 0.08
+      },
+      "days": 320,
+      "fills_count": 248,
+      "trace_sha256": "a3c9db21f5ab10c59e710ef308e746a2d9a295bdc9ce08504767bcb324d038eb",
+      "fills_sha256": "948daeb2bbe9a033d4b5ebb05eada5b0548fba798cac653fc0af69c4ace7a12d",
+      "events_sha256": "2e5aefa3d05760509438420d2ef0f3ec70a660d452660a6c05dd438ee2973be7",
+      "metrics": {
+        "total_return": 12.800669781610381,
+        "max_drawdown": -0.1407956526125117,
+        "sharpe": 4.047687371050682,
+        "final_equity": 27601339.56322076
+      }
+    },
+    {
+      "names": [
+        "capital:track_trend_b:5000000.0",
+        "capital:momentum:5000000.0"
+      ],
+      "request": {
+        "start": "2025-04-01",
+        "end": "2026-07-24",
+        "initial_capital": 5000000.0,
+        "slippage_bps": 10.0,
+        "max_adv_participation": 0.08
+      },
+      "days": 320,
+      "fills_count": 276,
+      "trace_sha256": "da7da7b96fb84da23f82644d1e7a6db40f0ae1af1c99b5a9adbf3ea49df120b7",
+      "fills_sha256": "d475c490e8327b5506374af320d9d5a59d96008a54d0fa126d5a2890303db0a9",
+      "events_sha256": "2e5aefa3d05760509438420d2ef0f3ec70a660d452660a6c05dd438ee2973be7",
+      "metrics": {
+        "total_return": 12.849887739100165,
+        "max_drawdown": -0.14083318407058898,
+        "sharpe": 4.054701879260902,
+        "final_equity": 69249438.69550082
+      }
+    },
+    {
+      "names": [
+        "capital:track_trend_b:10000000.0",
+        "capital:momentum:10000000.0"
+      ],
+      "request": {
+        "start": "2025-04-01",
+        "end": "2026-07-24",
+        "initial_capital": 10000000.0,
+        "slippage_bps": 10.0,
+        "max_adv_participation": 0.08
+      },
+      "days": 320,
+      "fills_count": 285,
+      "trace_sha256": "df806f50b506297d0e9fff79dab3bc80477314f1557dc9a50257ee6807aeee5a",
+      "fills_sha256": "00a3bd9b7c978eb14b3c7dd282d8b202c9336b684de124f8cbd505c08b900585",
+      "events_sha256": "9e40e1ccd2ec02808e4984ef202b36c32c4584e1699aff2ca60aff43af5cff45",
+      "metrics": {
+        "total_return": 12.808461102824383,
+        "max_drawdown": -0.14087487976268886,
+        "sharpe": 4.050446854878051,
+        "final_equity": 138084611.02824384
+      }
+    },
+    {
+      "names": [
+        "capital:track_trend_b:30000000.0",
+        "capital:momentum:30000000.0"
+      ],
+      "request": {
+        "start": "2025-04-01",
+        "end": "2026-07-24",
+        "initial_capital": 30000000.0,
+        "slippage_bps": 10.0,
+        "max_adv_participation": 0.08
+      },
+      "days": 320,
+      "fills_count": 300,
+      "trace_sha256": "c2c618760eeee533427fed3e399c8fe34c05746ffe8174f324eb4417dd76e243",
+      "fills_sha256": "9c461f3b74c42df610ec20eb717cf52eae7dce281a59cbf1e54759b35bfa4f96",
+      "events_sha256": "9e40e1ccd2ec02808e4984ef202b36c32c4584e1699aff2ca60aff43af5cff45",
+      "metrics": {
+        "total_return": 12.709052592244394,
+        "max_drawdown": -0.1408302462917308,
+        "sharpe": 4.041089557611514,
+        "final_equity": 411271577.76733184
+      }
+    },
+    {
+      "names": [
+        "capital:track_trend_b:100000000.0",
+        "capital:momentum:100000000.0"
+      ],
+      "request": {
+        "start": "2025-04-01",
+        "end": "2026-07-24",
+        "initial_capital": 100000000.0,
+        "slippage_bps": 10.0,
+        "max_adv_participation": 0.08
+      },
+      "days": 320,
+      "fills_count": 305,
+      "trace_sha256": "1eede7b2ac8b61c2ac8bd90e79a2ac07656817536e6da81fc6b00949a328c2e0",
+      "fills_sha256": "32f8a92d5f4a43724f08bb4d44543c58ed3587ad4f09f50f28622289534787ae",
+      "events_sha256": "30946eb7b32c62494d2571523a6d83fefca9f0b12b7ab7d9bad0fdcf84951510",
+      "metrics": {
+        "total_return": 9.790314156330307,
+        "max_drawdown": -0.16779577600194218,
+        "sharpe": 3.7753503773183934,
+        "final_equity": 1079031415.6330307
+      }
+    },
+    {
+      "names": [
+        "cost:track_trend_b:15.0"
+      ],
+      "request": {
+        "start": "2025-04-01",
+        "end": "2026-07-24",
+        "initial_capital": 1000000.0,
+        "slippage_bps": 15.0,
+        "max_adv_participation": 0.08
+      },
+      "days": 320,
+      "fills_count": 216,
+      "trace_sha256": "8bb005515e67cb93c5936c0b808c32dcbf8151f195a8bdbbf8e7fb2192cafa29",
+      "fills_sha256": "f42ab8d7c32c1dadee555a4ddc07049d9c6bba09557ac2e2ef46103aa0b5ed7f",
+      "events_sha256": "2e5aefa3d05760509438420d2ef0f3ec70a660d452660a6c05dd438ee2973be7",
+      "metrics": {
+        "total_return": 12.241960951178365,
+        "max_drawdown": -0.14106471497400574,
+        "sharpe": 3.9997529511215006,
+        "final_equity": 13241960.951178364
+      }
+    },
+    {
+      "names": [
+        "cost:track_trend_b:20.0"
+      ],
+      "request": {
+        "start": "2025-04-01",
+        "end": "2026-07-24",
+        "initial_capital": 1000000.0,
+        "slippage_bps": 20.0,
+        "max_adv_participation": 0.08
+      },
+      "days": 320,
+      "fills_count": 216,
+      "trace_sha256": "13a316b73d788e2584758370417bdab49f893b871f24eab7fdef5248af2db1ce",
+      "fills_sha256": "cd626d87b0b5ca879a0a22e900755240c2658b1b101954853bbba5209b9696c2",
+      "events_sha256": "f43f332c27bd6a5dd8bce63082192140aba68c2c72d7f7726123deab54756a12",
+      "metrics": {
+        "total_return": 12.04467827758438,
+        "max_drawdown": -0.14220428317288103,
+        "sharpe": 3.978074897800599,
+        "final_equity": 13044678.27758438
+      }
+    },
+    {
+      "names": [
+        "glmcsm_6",
+        "capital:glmcsm_6:2000000.0"
+      ],
+      "request": {
+        "start": "2025-01-02",
+        "end": "2026-07-24",
+        "initial_capital": 2000000.0,
+        "slippage_bps": 10.0,
+        "max_adv_participation": 0.08
+      },
+      "days": 377,
+      "fills_count": 291,
+      "trace_sha256": "f82a83a7614b192e878d4679ff7e5ffe48a2319f3bf75a9d101ccf16dc62467f",
+      "fills_sha256": "0931092c05c4ee139352c05acc6b76fbb685b90df44b98b97ac9c57890e76835",
+      "events_sha256": "545cc935851687f3d5f7b2145b51d359fd26fd87c7463bdef2de870605a2d109",
+      "metrics": {
+        "total_return": 14.99444729744485,
+        "max_drawdown": -0.14642120539274472,
+        "sharpe": 3.7694939649873245,
+        "final_equity": 31988894.5948897
+      }
+    },
+    {
+      "names": [
+        "capital:glmcsm_6:1000000.0"
+      ],
+      "request": {
+        "start": "2025-01-02",
+        "end": "2026-07-24",
+        "initial_capital": 1000000.0,
+        "slippage_bps": 10.0,
+        "max_adv_participation": 0.08
+      },
+      "days": 377,
+      "fills_count": 252,
+      "trace_sha256": "9baa0b1ce81e39c0e0fe4c121523abd11c42713084a95c1b5e11413d00aaf61d",
+      "fills_sha256": "bb9454e01674fe595608f6e52df1121cbd05593a0437d497e90dd620b6856bb6",
+      "events_sha256": "581a3edc255b22b499e6a6d7c00c405ae09296c9c0e540457d98a5afb2f128ba",
+      "metrics": {
+        "total_return": 14.684823245062635,
+        "max_drawdown": -0.1463966580236673,
+        "sharpe": 3.752445288177086,
+        "final_equity": 15684823.245062634
+      }
+    },
+    {
+      "names": [
+        "capital:glmcsm_6:5000000.0"
+      ],
+      "request": {
+        "start": "2025-01-02",
+        "end": "2026-07-24",
+        "initial_capital": 5000000.0,
+        "slippage_bps": 10.0,
+        "max_adv_participation": 0.08
+      },
+      "days": 377,
+      "fills_count": 322,
+      "trace_sha256": "38ffa83fe5035e1f889ecf45e590856bfc617c8842fabf8ac72d0240aa95e5aa",
+      "fills_sha256": "063942f473d7e8d66f5ca58a5dfdcb53a8efec22dfe294fc963cebd8b81f305e",
+      "events_sha256": "1eedd56389c5933466be013b96d2b60686407a87639f330e0fe9653508f0ba4f",
+      "metrics": {
+        "total_return": 15.04334167187124,
+        "max_drawdown": -0.1469967990496336,
+        "sharpe": 3.7737950591499634,
+        "final_equity": 80216708.3593562
+      }
+    },
+    {
+      "names": [
+        "capital:glmcsm_6:10000000.0"
+      ],
+      "request": {
+        "start": "2025-01-02",
+        "end": "2026-07-24",
+        "initial_capital": 10000000.0,
+        "slippage_bps": 10.0,
+        "max_adv_participation": 0.08
+      },
+      "days": 377,
+      "fills_count": 331,
+      "trace_sha256": "b15b2976993b0126687f0e33224c1ab90d786c50a025aa884f06fb6b839f9fc2",
+      "fills_sha256": "5cc6f4a010a6182dc754d405c312dd3559ea2fd69a202d024d93b30238cb1f2b",
+      "events_sha256": "545cc935851687f3d5f7b2145b51d359fd26fd87c7463bdef2de870605a2d109",
+      "metrics": {
+        "total_return": 15.034205245465891,
+        "max_drawdown": -0.14674128860832591,
+        "sharpe": 3.773609417793744,
+        "final_equity": 160342052.45465893
+      }
+    },
+    {
+      "names": [
+        "capital:glmcsm_6:30000000.0"
+      ],
+      "request": {
+        "start": "2025-01-02",
+        "end": "2026-07-24",
+        "initial_capital": 30000000.0,
+        "slippage_bps": 10.0,
+        "max_adv_participation": 0.08
+      },
+      "days": 377,
+      "fills_count": 345,
+      "trace_sha256": "70b1287728f377eee28c66d3d64764180c92c4ca02e0670ee3dca01e4f232120",
+      "fills_sha256": "a98d27520b0e22c1a39e881fd63567b96bf7341a9b19e91f5ef2ad2c4e095d99",
+      "events_sha256": "545cc935851687f3d5f7b2145b51d359fd26fd87c7463bdef2de870605a2d109",
+      "metrics": {
+        "total_return": 14.147942848457957,
+        "max_drawdown": -0.1544591079695974,
+        "sharpe": 3.7103159595334874,
+        "final_equity": 454438285.4537387
+      }
+    },
+    {
+      "names": [
+        "capital:glmcsm_6:100000000.0"
+      ],
+      "request": {
+        "start": "2025-01-02",
+        "end": "2026-07-24",
+        "initial_capital": 100000000.0,
+        "slippage_bps": 10.0,
+        "max_adv_participation": 0.08
+      },
+      "days": 377,
+      "fills_count": 360,
+      "trace_sha256": "f785d35c3efd57ec82992a1ae7a65af55ec23442255b3301e587956927bb4e25",
+      "fills_sha256": "fdf8fca14b9f140262563a2b9a937e795180389d359d22afd866513850469d37",
+      "events_sha256": "1772e9f231bcb32713d39358e0e1e5d1aafad3bb69a3e61a0ed840de947e0940",
+      "metrics": {
+        "total_return": 10.55531099043561,
+        "max_drawdown": -0.16803577945382098,
+        "sharpe": 3.497416324258439,
+        "final_equity": 1155531099.043561
+      }
+    },
+    {
+      "names": [
+        "cost:glmcsm_6:15.0"
+      ],
+      "request": {
+        "start": "2025-01-02",
+        "end": "2026-07-24",
+        "initial_capital": 2000000.0,
+        "slippage_bps": 15.0,
+        "max_adv_participation": 0.08
+      },
+      "days": 377,
+      "fills_count": 293,
+      "trace_sha256": "f86acaaf2be5887c2143049cb654b958aeb92f1fa831c3ed197e050fd0288cb9",
+      "fills_sha256": "8b0c776f8cb81dc61f274291cbf964f43d145998c8e1b21da7009f25671a3088",
+      "events_sha256": "4656a409b6b504ecb6fda21ec2b8935f153e4fcecbe47db2c664475f6a99c682",
+      "metrics": {
+        "total_return": 14.584785292556699,
+        "max_drawdown": -0.1507544339497664,
+        "sharpe": 3.7342990474411843,
+        "final_equity": 31169570.5851134
+      }
+    },
+    {
+      "names": [
+        "cost:glmcsm_6:20.0"
+      ],
+      "request": {
+        "start": "2025-01-02",
+        "end": "2026-07-24",
+        "initial_capital": 2000000.0,
+        "slippage_bps": 20.0,
+        "max_adv_participation": 0.08
+      },
+      "days": 377,
+      "fills_count": 284,
+      "trace_sha256": "4f9d4f11d2ddeb98598b642d9c1020e02010a6a72df7b1988f26fec48c2e7eab",
+      "fills_sha256": "80d5e0ce6faf9f1c1389f18bd9d50d9f24f2012dde6cc7ced4acf77c7320ecae",
+      "events_sha256": "59145378da96c973be8c65f1d3b3c42cd4190738c360bab7980fd47da0c4ae9a",
+      "metrics": {
+        "total_return": 13.670988449667192,
+        "max_drawdown": -0.15374042492619466,
+        "sharpe": 3.659273472438214,
+        "final_equity": 29341976.899334382
+      }
+    }
+  ]
+}
