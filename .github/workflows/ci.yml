@@ -11,7 +11,7 @@ permissions:
 
 concurrency:
   group: verify-${{ github.workflow }}-${{ github.ref }}
-  cancel-in-progress: false
+  cancel-in-progress: true
 
 env:
   GQUANT_SOURCE_REVISION: ${{ github.event.pull_request.head.sha || github.sha }}
