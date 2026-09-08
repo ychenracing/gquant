@@ -2,7 +2,7 @@
 
 ## Current acceptance
 
-`fusion/config.py` defaults to **0.08**, never no-cap. `glmqwen-verify` records the exact
+`fusion/config.py` defaults to **0.08**, never no-cap. `gquant-verify` records the exact
 checked-out HEAD, Python/dependency versions, source archive, config, frozen data hashes,
 and target hash. Its engineering and economics jobs are separate. The economic job
 requires the four frozen-reference gates at 8% and the actual-fill/account audit.
@@ -10,9 +10,12 @@ Capital scans and increased-cost failures are explicitly diagnostic, not silentl
 formal requirements. PR checks and downloaded artifacts are the status authority; a source
 commit or a generator's green status is not a final-HEAD check.
 
-Current outputs are artifact files `formal-8pct-scorecard.json` (including a fixed capital
-scan), `formal-8pct-correctness.json` (continuous accounts, all four ledgers and costs), and
-`diagnostic-no-cap-scorecard.json`. Outputs do not overwrite the historical files below.
+Current CI outputs are `gquant-scorecard.json` (four reference windows and the historical
+diagnostic window) and `gquant-correctness.json` (continuous accounts, all four ledgers and
+cost sensitivity). New scorecard rows identify the strategy under the `gquant` field.
+Capital scans and no-cap diagnostics can be run explicitly into new output paths; the
+naming checks do not claim these optional scans have been rerun. Sealed JSON files below
+retain their original bytes, field names and provenance and are not current report APIs.
 
 ## Historical failures: retain, never relabel as passed
 
@@ -48,5 +51,5 @@ identity even where corrected 8% outputs happen to have the same numbers.
 
 All target windows have been observed and used for research. The historical diagnostic
 window overlaps research/target evidence and is not clean OOS. Four frozen-reference rows
-are not four fresh independent reruns: track/momentum share glmqwen's same window/capital,
+are not four fresh independent reruns: track/momentum share gquant's same window/capital,
 and momentum has no underlying data here. No-cap capital scans never certify capacity.

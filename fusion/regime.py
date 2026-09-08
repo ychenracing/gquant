@@ -1,6 +1,6 @@
 """市场状态机: TREND / WEAKEN / CRASH / RECOVERY 四态。
 
-状态机是**内生**的 —— 全部输入都来自 glmqwen 自己的标的池, 不使用外部指数:
+状态机是**内生**的 —— 全部输入都来自 gquant 自己的标的池, 不使用外部指数:
   - EWI   : `universe` (26 只) 的等权指数, 由 market_metrics() 构建;
   - 宽度  : 26 只中收盘价站上 MA28 (`trend_ma`) 的占比;
   - EWI 5 日 / 20 日累计收益;
@@ -23,7 +23,7 @@ CRASH 反事实账本显示裸宽度触发 4 回合错 3 回合 (75% 错失率),
 0.10 恰落在该经验分界上, 且 0.05 与 0.10 结果逐字节相同 (平台型而非悬崖型)。
 
 **已知架构局限**: 内生状态机与持仓池强耦合 —— 换池即换状态机输入。实测把
-track_trend 的原生逻辑跑在 glmqwen 的 core-7 池上, 其 WARNING 天数从 114 涨到
+track_trend 的原生逻辑跑在 gquant 的 core-7 池上, 其 WARNING 天数从 114 涨到
 161、risk_off_days=110、收益从 +1155% 崩到 +164%。竞品中只有 track_trend 用
 外生指数 (沪深300 滚动回撤 + 中证AI 超额回撤) 驱市场状态, 因此换池不崩。
 详见 benchmark/ic_report.md。

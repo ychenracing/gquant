@@ -1,4 +1,4 @@
-# glmqwen 参数手册
+# gquant 参数手册
 
 `fusion/config.py` 是参数唯一权威来源。本文件说明当前值、生产路径和必要经济语义。
 

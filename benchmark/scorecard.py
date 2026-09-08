@@ -1,17 +1,17 @@
 #!/usr/bin/env python3
-"""统一成绩单: 在每套竞品各自的窗口内跑 glmqwen, 逐维度判定是否超越。
+"""统一成绩单: 在每套竞品各自的窗口内跑 gquant, 逐维度判定是否超越。
 
 用法:
   python3 benchmark/scorecard.py                  # 四窗口 + holdout
   python3 benchmark/scorecard.py --json out.json  # 另存机器可读结果
-  python3 benchmark/scorecard.py --override k v   # 临时覆盖 glmqwen 参数
+  python3 benchmark/scorecard.py --override k v   # 临时覆盖 gquant 参数
 
 超越判定 (三个维度全部满足才算 PASS):
-  收益  glmqwen.total_return  >  竞品.total_return
-  回撤  |glmqwen.max_drawdown| <  |竞品.max_drawdown|
-  风险调整 glmqwen.sharpe     >  竞品.sharpe   (竞品 sharpe 缺失时跳过该项)
+  收益  gquant.total_return  >  竞品.total_return
+  回撤  |gquant.max_drawdown| <  |竞品.max_drawdown|
+  风险调整 gquant.sharpe     >  竞品.sharpe   (竞品 sharpe 缺失时跳过该项)
 
-公平性约定: glmqwen 使用与竞品相同的 initial_capital, 因为整手取整与
+公平性约定: gquant 使用与竞品相同的 initial_capital, 因为整手取整与
 min_trade_value 对小资金的影响不同口径。
 """
 
@@ -86,10 +86,10 @@ SWEEP_CAPITALS = [(1e6, "100万"), (2e6, "200万"), (5e6, "500万"),
 
 
 def sweep_capital(cfg: dict, b: dict) -> list:
-    """在各本金规模上重跑同一窗口, 用竞品的固定门槛判定 glmqwen 是否仍达标。
+    """在各本金规模上重跑同一窗口, 用竞品的固定门槛判定 gquant 是否仍达标。
 
     存在的理由: 竞品门槛 (收益/回撤/Sharpe) 是在其自身本金下测得的固定数字,
-    而 glmqwen 的 realized 组合会随本金变化 —— 尤其当 max_positions 很小时,
+    而 gquant 的 realized 组合会随本金变化 —— 尤其当 max_positions 很小时,
     持仓由少数几个「整手」离散头寸构成, 多买/少买 1 手即可改变最大回撤数个百分点。
     只报告基准资金那一个点, 会把这种量化运气当成策略属性。实测:
       daily_rotation (2仓) turtle 窗口 DD 随本金为
@@ -108,7 +108,7 @@ def sweep_capital(cfg: dict, b: dict) -> list:
 
 
 def main() -> int:
-    ap = argparse.ArgumentParser(description="glmqwen 超越四套基准的统一成绩单")
+    ap = argparse.ArgumentParser(description="gquant 超越四套基准的统一成绩单")
     ap.add_argument("--json", default="")
     ap.add_argument("--quiet", action="store_true")
     ap.add_argument(
@@ -130,7 +130,7 @@ def main() -> int:
         m = run_window(cfg, b["start"], b["end"], b["initial_capital"])
         ok, verdict = judge(m, b)
         all_pass &= ok
-        row = {"baseline": b, "glmqwen": m, "pass": ok, "verdict": verdict}
+        row = {"baseline": b, "gquant": m, "pass": ok, "verdict": verdict}
         if args.capital_sweep:
             row["sweep"] = sweep_capital(cfg, b)
         rows.append(row)
@@ -155,8 +155,8 @@ def main() -> int:
                                 k: r["baseline"][k]
                                 for k in ("total_return", "max_drawdown", "sharpe")
                             },
-                            "glmqwen": {
-                                k: r["glmqwen"][k]
+                            "gquant": {
+                                k: r["gquant"][k]
                                 for k in ("total_return", "max_drawdown", "sharpe",
                                           "calmar", "avg_exposure", "n_fills",
                                           "regime_days", "exposure_by_regime",
@@ -180,29 +180,29 @@ def main() -> int:
 
 def _print(rows, hold, all_pass) -> None:
     print("=" * 100)
-    print("glmqwen 统一成绩单 — 在每套竞品各自的窗口内比较")
+    print("gquant 统一成绩单 — 在每套竞品各自的窗口内比较")
     print("=" * 100)
     for r in rows:
-        b, m, v = r["baseline"], r["glmqwen"], r["verdict"]
+        b, m, v = r["baseline"], r["gquant"], r["verdict"]
         tag = "PASS" if r["pass"] else "FAIL"
         prov = "" if b["provenance"] == "MEASURED" else " [自述,不可复算]"
         print(f"\n[{tag}] {b['label']}  {b['start']} ~ {b['end']}{prov}")
-        print(f"    总收益   竞品 {b['total_return']:>+9.2%}  |  glmqwen {m['total_return']:>+9.2%}"
+        print(f"    总收益   竞品 {b['total_return']:>+9.2%}  |  gquant {m['total_return']:>+9.2%}"
               f"   {'✓' if v['return'] else '✗ 差 ' + format((b['total_return'] - m['total_return']) * 100, '.0f') + 'pp'}")
         bm = b["max_drawdown"] if b["max_drawdown"] < 0 else -b["max_drawdown"]
-        print(f"    最大回撤 竞品 {bm:>+9.2%}  |  glmqwen {m['max_drawdown']:>+9.2%}"
+        print(f"    最大回撤 竞品 {bm:>+9.2%}  |  gquant {m['max_drawdown']:>+9.2%}"
               f"   {'✓' if v['drawdown'] else '✗'}")
         if b.get("sharpe") is not None:
-            print(f"    Sharpe   竞品 {b['sharpe']:>9.2f}  |  glmqwen {m['sharpe']:>9.2f}"
+            print(f"    Sharpe   竞品 {b['sharpe']:>9.2f}  |  gquant {m['sharpe']:>9.2f}"
                   f"   {'✓' if v.get('sharpe') else '✗'}")
         else:
-            print(f"    Sharpe   竞品        --  |  glmqwen {m['sharpe']:>9.2f}   (竞品未报告, 跳过)")
+            print(f"    Sharpe   竞品        --  |  gquant {m['sharpe']:>9.2f}   (竞品未报告, 跳过)")
         s = m["stress"]
         if s.get("in_window"):
-            print(f"    压力段(>={STRESS_START}) glmqwen 收益 {s['return']:+.2%} / 段内回撤 {s['max_drawdown']:+.2%}")
+            print(f"    压力段(>={STRESS_START}) gquant 收益 {s['return']:+.2%} / 段内回撤 {s['max_drawdown']:+.2%}")
         rd = m["regime_days"]
         eb = m["exposure_by_regime"]
-        print(f"    glmqwen 敞口/状态  平均 {m['avg_exposure']:.1%}  成交 {m['n_fills']}  "
+        print(f"    gquant 敞口/状态  平均 {m['avg_exposure']:.1%}  成交 {m['n_fills']}  "
               f"CRASH {rd.get('CRASH', 0)}日@{eb.get('CRASH', 0):.1%}  "
               f"TREND {rd.get('TREND', 0)}日@{eb.get('TREND', 0):.1%}")
         if "sweep" in r:
@@ -210,7 +210,7 @@ def _print(rows, hold, all_pass) -> None:
             dds = [abs(x["max_drawdown"]) for x in sw]
             spread = max(dds) - min(dds)
             verdict_txt = "规模稳健" if spread < 0.02 else "规模脆弱 <<<"
-            print(f"    规模扫描 (竞品门槛固定, 只变 glmqwen 本金):  {verdict_txt}"
+            print(f"    规模扫描 (竞品门槛固定, 只变 gquant 本金):  {verdict_txt}"
                   f"   回撤极差 {spread:.2%}")
             for x in sw:
                 mark = "✓" if x["ok"] else "✗"
