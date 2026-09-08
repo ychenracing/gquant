@@ -3,6 +3,7 @@
 from __future__ import annotations
 
 import copy
+import hashlib
 import math
 from pathlib import Path
 from typing import Any, cast
@@ -55,6 +56,35 @@ def _timestamp(value: object, label: str) -> pd.Timestamp:
     if pd.isna(day):
         raise ValueError(f"invalid {label}")
     return day
+
+
+def _snapshot_prefix_sha256(
+    snapshot: Snapshot,
+    symbols: list[str],
+    through: pd.Timestamp,
+) -> str:
+    """Hash admitted OHLCV history through one processed day, excluding future extensions."""
+    hasher = hashlib.sha256()
+    fields = ("date", "open", "high", "low", "close", "volume")
+    for symbol in sorted(symbols):
+        frame = snapshot.bars.get(symbol)
+        if frame is None:
+            raise ValueError(f"{symbol}: missing from admitted snapshot")
+        prefix = frame.loc[frame["date"] <= through, list(fields)]
+        if prefix.empty:
+            raise ValueError(f"{symbol}: no admitted history through saved account state")
+        hasher.update(symbol.encode("utf-8"))
+        hasher.update(b"\0")
+        hasher.update(str(len(prefix)).encode("ascii"))
+        hasher.update(b"\0")
+        for row in prefix.itertuples(index=False, name=None):
+            hasher.update(str(pd.Timestamp(row[0]).date()).encode("ascii"))
+            hasher.update(b"\0")
+            for raw in row[1:]:
+                token = "NA" if pd.isna(raw) else format(float(raw), ".17g")
+                hasher.update(token.encode("ascii"))
+                hasher.update(b"\0")
+    return hasher.hexdigest()
 
 
 def _state_account(state: EngineState) -> dict[str, object]:
@@ -198,6 +228,7 @@ def _initialize_from_snapshot(
         equity_values=[equity],
         exposure_values=[exposure],
         regime_values=[regime.state],
+        data_prefix_sha256=_snapshot_prefix_sha256(snapshot, list(cfg["universe"]), as_of),
         reset_boundary={
             "account_reset": True,
             "risk_reset": True,
@@ -277,6 +308,11 @@ def publish_account_state(
     state: EngineState,
     report: dict[str, object],
 ) -> Path:
+    if state.last_processed_day is None:
+        raise ValueError("account continuation state has no processed day")
+    state.data_prefix_sha256 = _snapshot_prefix_sha256(
+        snapshot, list(cfg["universe"]), state.last_processed_day
+    )
     return publish(
         output,
         {
@@ -336,6 +372,13 @@ def resume_and_publish(
 
     events = parse_actual_events(actual_events, state.last_processed_day) if actual_events is not None else {}
     snapshot = admit_snapshot(data_dir)
+    if state.data_prefix_sha256 is None:
+        raise ValueError("saved account state has no admitted data prefix identity")
+    current_prefix = _snapshot_prefix_sha256(
+        snapshot, list(cfg["universe"]), state.last_processed_day
+    )
+    if current_prefix != state.data_prefix_sha256:
+        raise ValueError("admitted data history differs from saved account state")
     bars = {symbol: snapshot.bars[symbol] for symbol in cfg["universe"]}
     trading_days = pd.DatetimeIndex(build_panels(bars)["close"].index)
     require_complete_actual_sessions(
