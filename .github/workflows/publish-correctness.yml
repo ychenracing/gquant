@@ -27,7 +27,15 @@ jobs:
           set -euo pipefail
           base=772e7650e258b9484b7400aab6d092bbce4998a1
           test "$(git merge-base HEAD "$base")" = "$base"
-          cat .migration/part00 .migration/part01 .migration/part02 .migration/part03 .migration/part04 \
+          cat \
+            .migration/part00a \
+            .migration/part00b1 \
+            .migration/part00b2a \
+            .migration/part00b2b \
+            .migration/part00b2c1 \
+            .migration/c2_0 .migration/c2_1 .migration/c2_2 .migration/c2_3 .migration/c2_4 \
+            .migration/part00b2c3 \
+            .migration/part01 .migration/part02 .migration/part03 .migration/part04 \
             | base64 -d | gzip -d > /tmp/candidate.patch
           echo '15d92904433b678a940907a4a6f1492775772edaf1b7f54a50cfb580bdf0b7c1  /tmp/candidate.patch' \
             | sha256sum -c -
