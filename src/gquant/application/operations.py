@@ -22,6 +22,7 @@ from gquant.portfolio.models import Account, Position
 from gquant.risk.guard import PortfolioGuard
 from gquant.risk.regime import RegimeMachine
 from gquant.strategy.planner import DecisionContext, OrderPlanner
+from gquant.strategy.rotation import armed_pair_stop_orders
 
 from .engine import BacktestEngine
 from .service import report_metrics
@@ -92,9 +93,7 @@ def _snapshot_prefix_sha256(
 
 def _state_account(state: EngineState) -> dict[str, object]:
     return {
-        "as_of": str(state.last_processed_day.date())
-        if state.last_processed_day is not None
-        else None,
+        "as_of": str(state.last_processed_day.date()) if state.last_processed_day is not None else None,
         "cash": state.account.cash,
         "positions": [
             {
@@ -109,6 +108,10 @@ def _state_account(state: EngineState) -> dict[str, object]:
             for p in sorted(state.account.positions.values(), key=lambda p: p.symbol)
         ],
         "next_orders": [dict(order) for order in state.pending_orders],
+        "conditional_orders": [dict(order) for order in state.conditional_orders],
+        "account_equity": state.account_equity_values[-1] if state.account_equity_values else None,
+        "performance_equity": state.equity_values[-1] if state.equity_values else None,
+        "external_cash_flow_total": state.external_cash_flow_total,
         "reset_boundary": dict(state.reset_boundary) if state.reset_boundary is not None else None,
     }
 
@@ -204,6 +207,7 @@ def _initialize_from_snapshot(
         account,
         [],
     )
+    conditional = armed_pair_stop_orders(positions, as_of, close_row, ind, ewi_ext, cfg)
     account.events.append(f"{as_of.date()} 人工账户接管: 显式重置历史回撤/冷却状态")
     last_close: dict[str, float] = {}
     last_volume: dict[str, float] = {}
@@ -219,6 +223,7 @@ def _initialize_from_snapshot(
         last_processed_day=as_of,
         account=account,
         pending_orders=pending,
+        conditional_orders=conditional,
         regime=regime.export_state(),
         guard=guard.export_state(),
         planner=planner.export_state(),
@@ -230,8 +235,10 @@ def _initialize_from_snapshot(
         last_known_volume=last_volume,
         equity_dates=[as_of],
         equity_values=[equity],
+        account_equity_values=[equity],
         exposure_values=[exposure],
         regime_values=[regime.state],
+        external_cash_flow_total=0.0,
         data_prefix_sha256=_snapshot_prefix_sha256(snapshot, list(cfg["universe"]), as_of),
         reset_boundary={
             "account_reset": True,
@@ -274,12 +281,20 @@ def parse_actual_events(
         actions = session.get("corporate_actions", [])
         if not isinstance(actions, list):
             raise ValueError("corporate_actions must be a list")
-        if not all(isinstance(item, dict) for item in fills + actions):
-            raise ValueError("actual fill/action entries must be objects")
-        result[day] = {
-            "fills": [dict(item) for item in fills],
-            "corporate_actions": [dict(item) for item in actions],
+        row: dict[str, list[dict[str, object]]] = {
+            "fills": [dict(item) for item in fills if isinstance(item, dict)],
+            "corporate_actions": [dict(item) for item in actions if isinstance(item, dict)],
         }
+        if len(row["fills"]) != len(fills) or len(row["corporate_actions"]) != len(actions):
+            raise ValueError("actual fill/action entries must be objects")
+        for key in ("cash_flows", "manual_adjustments"):
+            if key not in session:
+                continue
+            value = session[key]
+            if not isinstance(value, list) or not all(isinstance(item, dict) for item in value):
+                raise ValueError(f"{key} must be a list of objects")
+            row[key] = [dict(item) for item in value]
+        result[day] = row
     return result
 
 
@@ -323,6 +338,7 @@ def publish_account_state(
             "state.json": state.to_dict(),
             "account.json": _state_account(state),
             "next_orders.json": [dict(order) for order in state.pending_orders],
+            "conditional_orders.json": [dict(order) for order in state.conditional_orders],
             "reconciliations.json": [dict(item) for item in state.reconciliations],
             "config.json": cfg,
             "identity.json": identity(cfg, data_dir, snapshot.info),
@@ -348,6 +364,9 @@ def initialize_and_publish(
         "simulation_only": False,
         "last_processed_day": str(as_of.date()),
         "account_reset": True,
+        "account_equity": state.account_equity_values[-1],
+        "performance_equity": state.equity_values[-1],
+        "external_cash_flow_total": 0.0,
         "reset_boundary": dict(state.reset_boundary or {}),
     }
     return publish_account_state(output, cfg, data_dir, snapshot, state, report)
@@ -373,29 +392,18 @@ def resume_and_publish(
     requested_end = pd.Timestamp(cfg["end"])
     if requested_end <= state.last_processed_day:
         raise ValueError("resume end must be after saved account state")
-
-    events = (
-        parse_actual_events(actual_events, state.last_processed_day)
-        if actual_events is not None
-        else {}
-    )
+    events = parse_actual_events(actual_events, state.last_processed_day) if actual_events is not None else {}
     snapshot = admit_snapshot(data_dir)
     if state.data_prefix_sha256 is None:
         raise ValueError("saved account state has no admitted data prefix identity")
-    current_prefix = _snapshot_prefix_sha256(
-        snapshot, list(cfg["universe"]), state.last_processed_day
-    )
+    current_prefix = _snapshot_prefix_sha256(snapshot, list(cfg["universe"]), state.last_processed_day)
     if current_prefix != state.data_prefix_sha256:
         raise ValueError("admitted data history differs from saved account state")
     bars = {symbol: snapshot.bars[symbol] for symbol in cfg["universe"]}
     trading_days = pd.DatetimeIndex(build_panels(bars)["close"].index)
     require_complete_actual_sessions(
-        events,
-        trading_days,
-        after=state.last_processed_day,
-        end=requested_end,
+        events, trading_days, after=state.last_processed_day, end=requested_end
     )
-
     engine = BacktestEngine(cfg, data_dir)
     result = engine.run(snapshot.bars, state=state, actual_events=events)
     final_state = engine.last_state
@@ -405,12 +413,13 @@ def resume_and_publish(
         "mode": "manual_account_continuation",
         "simulation_only": False,
         "performance_since_reset": report_metrics(result),
+        "account_equity": final_state.account_equity_values[-1],
+        "performance_equity": final_state.equity_values[-1],
+        "external_cash_flow_total": final_state.external_cash_flow_total,
         "account_reset": bool(final_state.reset_boundary),
         "reset_boundary": dict(final_state.reset_boundary or {}),
         "last_processed_day": (
-            str(final_state.last_processed_day.date())
-            if final_state.last_processed_day is not None
-            else None
+            str(final_state.last_processed_day.date()) if final_state.last_processed_day is not None else None
         ),
         "actual_sessions": [str(day.date()) for day in sorted(events)],
     }

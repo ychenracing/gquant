@@ -1,4 +1,4 @@
-"""Apply authoritative broker-reported fills and explicit corporate actions to one account."""
+"""Apply authoritative broker reports, operator deviations and explicit account events."""
 
 from __future__ import annotations
 
@@ -40,21 +40,98 @@ def _planned_by_key(pending_orders: list[Order]) -> dict[tuple[str, str], int]:
     return dict(planned)
 
 
+def _conditional_by_key(
+    conditional_orders: list[dict[str, object]] | None,
+) -> dict[tuple[str, str], int]:
+    conditional: dict[tuple[str, str], int] = defaultdict(int)
+    for order in conditional_orders or []:
+        if not isinstance(order, dict):
+            raise ValueError("conditional orders must be objects")
+        symbol = str(order.get("symbol", ""))
+        action = str(order.get("action", ""))
+        trigger = str(order.get("trigger", ""))
+        trigger_price = _number(order.get("trigger_price"), "conditional trigger price")
+        shares = _shares(order.get("shares"), "conditional shares")
+        if not symbol or action != "sell" or trigger != "low_at_or_below" or trigger_price <= 0:
+            raise ValueError("invalid conditional protection order")
+        conditional[(symbol, action)] += shares
+    return dict(conditional)
+
+
+def _apply_fill(
+    account: Account,
+    symbol: str,
+    side: str,
+    shares: int,
+    price: float,
+    fees: float,
+    day: pd.Timestamp,
+    reason: str,
+) -> None:
+    value = shares * price
+    if side == "buy":
+        spend = value + fees
+        if spend > account.cash + 1e-7:
+            raise ValueError("actual buy fill exceeds account cash")
+        account.cash -= spend
+        old = account.positions.get(symbol)
+        if old is None:
+            account.positions[symbol] = Position(
+                symbol=symbol,
+                shares=shares,
+                entry_price=price,
+                peak_close=price,
+                entry_date=day,
+                sellable_shares=0,
+                today_bought_shares=shares,
+                today_bought_value=value,
+            )
+        else:
+            total = old.shares + shares
+            old.entry_price = (old.entry_price * old.shares + value) / total
+            old.shares = total
+            old.today_bought_shares += shares
+            old.today_bought_value += value
+    else:
+        pos = account.positions.get(symbol)
+        if pos is None:
+            raise ValueError(f"actual sell fill has no position: {symbol}")
+        if shares > pos.sellable_shares:
+            raise ValueError(f"actual sell exceeds T+1 sellable shares: {symbol}")
+        account.cash += value - fees
+        pos.realized_pnl += value - fees - pos.entry_price * shares
+        pos.shares -= shares
+        pos.sellable_shares -= shares
+        if pos.shares == 0:
+            account.positions.pop(symbol)
+        elif (
+            pos.sellable_shares == 0
+            and pos.today_bought_shares == pos.shares
+            and pos.today_bought_shares > 0
+        ):
+            pos.entry_price = pos.today_bought_value / pos.today_bought_shares
+            pos.entry_date = day
+            pos.peak_close = max(pos.peak_close, pos.entry_price)
+    account.fills.append(Fill(day, symbol, side, shares, price, account.cash, reason))
+
+
 def apply_actual_fills(
     account: Account,
     pending_orders: list[Order],
     raw_fills: list[dict[str, object]],
     day: pd.Timestamp,
+    *,
+    conditional_orders: list[dict[str, object]] | None = None,
 ) -> tuple[list[Order], list[dict[str, object]]]:
-    """Use the broker session as authoritative for the opening orders.
-
-    Empty ``raw_fills`` explicitly means zero fills. Actual fills may be partial or at a
-    different price, but may not introduce an unplanned symbol/side or exceed the planned
-    quantity. Unfinished full exits remain pending; unfilled entries and partial trims do not.
-    """
+    """Use broker fills as authoritative within ordinary or pre-committed authorization."""
     if not isinstance(raw_fills, list) or not all(isinstance(item, dict) for item in raw_fills):
         raise ValueError("actual fills must be a list of objects")
     planned = _planned_by_key(pending_orders)
+    conditional = _conditional_by_key(conditional_orders)
+    authorized = {
+        key: max(planned.get(key, 0), conditional.get(key, 0))
+        for key in set(planned) | set(conditional)
+    }
     actual: dict[tuple[str, str], int] = defaultdict(int)
     weighted_value: dict[tuple[str, str], float] = defaultdict(float)
     total_fees: dict[tuple[str, str], float] = defaultdict(float)
@@ -65,64 +142,18 @@ def apply_actual_fills(
         if not symbol or side not in {"buy", "sell"}:
             raise ValueError("actual fill requires a valid symbol and side")
         key = (symbol, side)
-        if key not in planned:
+        if key not in authorized:
             raise ValueError(f"unplanned actual fill: {symbol} {side}")
         shares = _shares(raw.get("shares"), "actual fill shares")
         price = _number(raw.get("price"), "actual fill price")
         fees = _number(raw.get("fees"), "actual fill fees", nonnegative=True)
         if price <= 0:
             raise ValueError("actual fill price must be positive")
-        if actual[key] + shares > planned[key]:
+        if actual[key] + shares > authorized[key]:
             raise ValueError(f"actual fill exceeds planned shares: {symbol} {side}")
-
-        value = shares * price
-        if side == "buy":
-            spend = value + fees
-            if spend > account.cash + 1e-7:
-                raise ValueError("actual buy fill exceeds account cash")
-            account.cash -= spend
-            old = account.positions.get(symbol)
-            if old is None:
-                account.positions[symbol] = Position(
-                    symbol=symbol,
-                    shares=shares,
-                    entry_price=price,
-                    peak_close=price,
-                    entry_date=day,
-                    sellable_shares=0,
-                    today_bought_shares=shares,
-                    today_bought_value=value,
-                )
-            else:
-                total = old.shares + shares
-                old.entry_price = (old.entry_price * old.shares + value) / total
-                old.shares = total
-                old.today_bought_shares += shares
-                old.today_bought_value += value
-        else:
-            pos = account.positions.get(symbol)
-            if pos is None:
-                raise ValueError(f"actual sell fill has no position: {symbol}")
-            if shares > pos.sellable_shares:
-                raise ValueError(f"actual sell exceeds T+1 sellable shares: {symbol}")
-            account.cash += value - fees
-            pos.realized_pnl += value - fees - pos.entry_price * shares
-            pos.shares -= shares
-            pos.sellable_shares -= shares
-            if pos.shares == 0:
-                account.positions.pop(symbol)
-            elif (
-                pos.sellable_shares == 0
-                and pos.today_bought_shares == pos.shares
-                and pos.today_bought_shares > 0
-            ):
-                pos.entry_price = pos.today_bought_value / pos.today_bought_shares
-                pos.entry_date = day
-                pos.peak_close = max(pos.peak_close, pos.entry_price)
-
-        account.fills.append(Fill(day, symbol, side, shares, price, account.cash, "actual_fill"))
+        _apply_fill(account, symbol, side, shares, price, fees, day, "actual_fill")
         actual[key] += shares
-        weighted_value[key] += value
+        weighted_value[key] += shares * price
         total_fees[key] += fees
 
     remaining_actual = dict(actual)
@@ -140,23 +171,127 @@ def apply_actual_fills(
                 still_pending.append(carry)
 
     records: list[dict[str, object]] = []
-    for key, planned_shares in sorted(planned.items()):
+    for key in sorted(set(planned) | set(conditional)):
         symbol, side = key
+        planned_shares = planned.get(key, 0)
+        conditional_shares = conditional.get(key, 0)
         actual_shares = actual.get(key, 0)
+        if conditional_orders:
+            authorization = (
+                "ordinary+conditional"
+                if planned_shares and conditional_shares
+                else "conditional"
+                if conditional_shares
+                else "ordinary"
+            )
+            records.append(
+                {
+                    "date": str(day.date()),
+                    "symbol": symbol,
+                    "side": side,
+                    "planned_shares": planned_shares,
+                    "conditional_shares": conditional_shares,
+                    "authorized_shares": max(planned_shares, conditional_shares),
+                    "actual_shares": actual_shares,
+                    "share_delta": actual_shares - max(planned_shares, conditional_shares),
+                    "actual_value": weighted_value.get(key, 0.0),
+                    "actual_fees": total_fees.get(key, 0.0),
+                    "authorization": authorization,
+                    "authoritative": True,
+                }
+            )
+        else:
+            records.append(
+                {
+                    "date": str(day.date()),
+                    "symbol": symbol,
+                    "side": side,
+                    "planned_shares": planned_shares,
+                    "actual_shares": actual_shares,
+                    "share_delta": actual_shares - planned_shares,
+                    "actual_value": weighted_value.get(key, 0.0),
+                    "actual_fees": total_fees.get(key, 0.0),
+                    "authoritative": True,
+                }
+            )
+    return still_pending, records
+
+
+def apply_manual_adjustments(
+    account: Account,
+    raw_adjustments: list[dict[str, object]],
+    day: pd.Timestamp,
+    *,
+    allowed_symbols: set[str],
+) -> list[dict[str, object]]:
+    """Apply explicit operator deviations without rewriting them as strategy orders."""
+    if not isinstance(raw_adjustments, list) or not all(
+        isinstance(item, dict) for item in raw_adjustments
+    ):
+        raise ValueError("manual_adjustments must be a list of objects")
+    records: list[dict[str, object]] = []
+    for raw in raw_adjustments:
+        symbol = str(raw.get("symbol", ""))
+        side = str(raw.get("side", ""))
+        reason = str(raw.get("reason", ""))
+        if symbol not in allowed_symbols:
+            raise ValueError(f"manual adjustment symbol outside configured universe: {symbol}")
+        if side not in {"buy", "sell"} or not reason:
+            raise ValueError("manual adjustment requires side and reason")
+        shares = _shares(raw.get("shares"), "manual adjustment shares")
+        price = _number(raw.get("price"), "manual adjustment price")
+        fees = _number(raw.get("fees"), "manual adjustment fees", nonnegative=True)
+        if price <= 0:
+            raise ValueError("manual adjustment price must be positive")
+        _apply_fill(account, symbol, side, shares, price, fees, day, "manual_override")
         records.append(
             {
                 "date": str(day.date()),
                 "symbol": symbol,
                 "side": side,
-                "planned_shares": planned_shares,
-                "actual_shares": actual_shares,
-                "share_delta": actual_shares - planned_shares,
-                "actual_value": weighted_value.get(key, 0.0),
-                "actual_fees": total_fees.get(key, 0.0),
+                "shares": shares,
+                "price": price,
+                "fees": fees,
+                "reason": reason,
+                "manual_override": True,
                 "authoritative": True,
             }
         )
-    return still_pending, records
+    return records
+
+
+def apply_cash_flows(
+    account: Account,
+    raw_flows: list[dict[str, object]],
+    day: pd.Timestamp,
+) -> tuple[float, list[dict[str, object]]]:
+    """Apply external deposits/withdrawals and return signed net flow for performance neutralization."""
+    if not isinstance(raw_flows, list) or not all(isinstance(item, dict) for item in raw_flows):
+        raise ValueError("cash_flows must be a list of objects")
+    net = 0.0
+    records: list[dict[str, object]] = []
+    for raw in raw_flows:
+        kind = str(raw.get("kind", ""))
+        amount = _number(raw.get("amount"), "cash flow amount", nonnegative=True)
+        if amount <= 0 or kind not in {"deposit", "withdrawal"}:
+            raise ValueError("cash flow must be a positive deposit or withdrawal")
+        signed = amount if kind == "deposit" else -amount
+        if account.cash + signed < -1e-7:
+            raise ValueError("cash withdrawal exceeds available account cash")
+        account.cash += signed
+        net += signed
+        records.append(
+            {
+                "date": str(day.date()),
+                "kind": kind,
+                "amount": amount,
+                "signed_amount": signed,
+                "note": str(raw.get("note", "")),
+                "external_cash_flow": True,
+                "authoritative": True,
+            }
+        )
+    return net, records
 
 
 def _scaled_shares(value: int, ratio: float, label: str) -> int:
@@ -172,8 +307,10 @@ def apply_corporate_actions(
     pending_orders: list[Order],
     raw_actions: list[dict[str, object]],
     day: pd.Timestamp,
+    *,
+    conditional_orders: list[dict[str, object]] | None = None,
 ) -> list[dict[str, object]]:
-    """Apply only explicit split/bonus-share and net cash-dividend events."""
+    """Apply explicit split/bonus-share and net cash-dividend events."""
     if not isinstance(raw_actions, list) or not all(isinstance(item, dict) for item in raw_actions):
         raise ValueError("corporate_actions must be a list of objects")
     records: list[dict[str, object]] = []
@@ -183,6 +320,9 @@ def apply_corporate_actions(
         if not symbol or symbol not in account.positions:
             raise ValueError("corporate action must reference a held symbol")
         pos = account.positions[symbol]
+        matching_conditional = [
+            order for order in conditional_orders or [] if str(order.get("symbol", "")) == symbol
+        ]
         if kind == "split":
             ratio = _number(raw.get("ratio"), "split ratio")
             if ratio <= 0:
@@ -193,10 +333,14 @@ def apply_corporate_actions(
             pos.today_bought_shares = _scaled_shares(pos.today_bought_shares, ratio, "split")
             pos.entry_price /= ratio
             pos.peak_close /= ratio
-            pos.today_bought_value = float(pos.today_bought_value)
             for order in pending_orders:
                 if order["symbol"] == symbol:
                     order["shares"] = _scaled_shares(int(order["shares"]), ratio, "split order")
+            for order in matching_conditional:
+                order["shares"] = _scaled_shares(int(order["shares"]), ratio, "split protection")
+                order["trigger_price"] = _number(
+                    order.get("trigger_price"), "conditional trigger price"
+                ) / ratio
             records.append(
                 {
                     "date": str(day.date()),
@@ -211,6 +355,17 @@ def apply_corporate_actions(
             cash_per_share = _number(
                 raw.get("cash_per_share_net"), "cash_per_share_net", nonnegative=True
             )
+            if matching_conditional:
+                adjustment = _number(
+                    raw.get("reference_price_adjustment"),
+                    "reference_price_adjustment",
+                    nonnegative=True,
+                )
+                for order in matching_conditional:
+                    trigger = _number(order.get("trigger_price"), "conditional trigger price")
+                    if trigger - adjustment <= 0:
+                        raise ValueError("cash-dividend adjustment invalidates conditional trigger")
+                    order["trigger_price"] = trigger - adjustment
             cash_added = pos.shares * cash_per_share
             account.cash += cash_added
             records.append(
