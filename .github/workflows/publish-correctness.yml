@@ -9,36 +9,41 @@ permissions:
   contents: write
 
 concurrency:
-  group: publish-gquant-correctness
+  group: publish-gquant-correctness-macos-v3
   cancel-in-progress: false
 
 jobs:
   publish:
-    runs-on: ubuntu-latest
+    runs-on: macos-latest
     timeout-minutes: 10
     steps:
       - uses: actions/checkout@11bd71901bbe5b1630ceea73d27597364c9af683
         with:
-          ref: codex/gquant-correctness-operations-20260908
           fetch-depth: 0
       - name: Reconstruct exact reviewed candidate
         shell: bash
         run: |
           set -euo pipefail
           base=772e7650e258b9484b7400aab6d092bbce4998a1
+          test "$(git rev-parse HEAD)" = "$GITHUB_SHA"
           test "$(git merge-base HEAD "$base")" = "$base"
-          cat \
-            .migration/part00a \
-            .migration/part00b1 \
-            .migration/part00b2a \
-            .migration/part00b2b \
-            .migration/part00b2c1 \
-            .migration/c2_0 .migration/c2_1 .migration/c2_2 .migration/c2_3 .migration/c2_4 \
-            .migration/part00b2c3 \
-            .migration/part01 .migration/part02 .migration/part03 .migration/part04 \
-            | base64 -d | gzip -d > /tmp/candidate.patch
-          echo '15d92904433b678a940907a4a6f1492775772edaf1b7f54a50cfb580bdf0b7c1  /tmp/candidate.patch' \
-            | sha256sum -c -
+          python3 - <<'PY'
+          from pathlib import Path
+          import base64, gzip, hashlib
+          names = [
+              'part00a', 'part00b1', 'part00b2a', 'part00b2b', 'part00b2c1',
+              'c2_0', 'c2_1', 'c2_2', 'c2_3', 'c2_4', 'part00b2c3',
+              'part01', 'part02', 'part03', 'part04',
+          ]
+          encoded = ''.join((Path('.migration') / name).read_text() for name in names)
+          compressed = base64.b64decode(encoded, validate=True)
+          patch = gzip.decompress(compressed)
+          digest = hashlib.sha256(patch).hexdigest()
+          expected = '15d92904433b678a940907a4a6f1492775772edaf1b7f54a50cfb580bdf0b7c1'
+          if digest != expected:
+              raise SystemExit(f'patch sha mismatch: {digest}')
+          Path('/tmp/candidate.patch').write_bytes(patch)
+          PY
           mkdir -p evidence/raw
           cp tests/fixtures/economic_sequences.json evidence/raw/pre-correctness-economic-sequences.json
           cp tests/fixtures/economic-oracle.json evidence/raw/pre-correctness-economic-oracle.json
