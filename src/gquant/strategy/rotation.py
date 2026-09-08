@@ -123,7 +123,7 @@ def armed_pair_stop_orders(
         return []
     if pd.isna(market_ext) or float(market_ext) < float(rc["pair_stop_market_ext"]):
         return []
-    symbols = sorted(str(symbol) for symbol in positions)
+    symbols = [str(symbol) for symbol in positions]
     known_close = close_row.reindex(symbols)
     if not bool((known_close > 0).all()):
         return []

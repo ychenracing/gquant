@@ -25,6 +25,37 @@ from .state import EngineState
 _flow_neutral_equity = flow_neutral_equity
 
 
+def _execute_simulated_pair_stop(
+    *,
+    account: Any,
+    executor: Any,
+    session: Session,
+    overnight: dict[str, Any],
+    pending_orders: list[Any],
+    day: pd.Timestamp,
+    prev_day: pd.Timestamp,
+    panels: dict[str, pd.DataFrame],
+    mkt: pd.DataFrame,
+    ind: dict[str, pd.DataFrame],
+    cfg: Config,
+) -> None:
+    if len(overnight) != 2:
+        return
+    stop_open = cast(Any, panels["open"].loc[day])
+    stop_low = cast(Any, panels["low"].loc[day])
+    stop_prev_close = cast(Any, panels["close"].loc[prev_day])
+    prev_mkt = cast(Any, mkt.loc[prev_day])
+    prev_market_ext = float(
+        prev_mkt["ewi"] / prev_mkt["ewi_ma_regime"] - 1.0
+        if pd.notna(prev_mkt["ewi_ma_regime"]) and float(prev_mkt["ewi_ma_regime"]) > 0
+        else float("nan")
+    )
+    stop_prices = extended_pair_stop_prices(
+        overnight, prev_day, stop_open, stop_low, stop_prev_close, ind, prev_market_ext, cfg
+    )
+    executor.execute_stops(account, session, stop_prices, stop_prev_close, pending_orders)
+
+
 class BacktestEngine:
     def __init__(self, cfg: Config, data_dir: Path | None = None) -> None:
         self.cfg = validate_config(cfg)
@@ -127,30 +158,19 @@ class BacktestEngine:
 
             # 模拟账户执行前一收盘武装的保护；人工账户只接受权威实际成交回报。
             if not authoritative and cfg["rotation_contract"]["pair_stop"] and i > 0:
-                if len(overnight) == 2:
-                    stop_open = cast(Any, panels["open"].loc[day])
-                    stop_low = cast(Any, panels["low"].loc[day])
-                    stop_prev_close = cast(Any, panels["close"].loc[prev_day])
-                    prev_mkt = cast(Any, mkt.loc[prev_day])
-                    prev_market_ext = float(
-                        prev_mkt["ewi"] / prev_mkt["ewi_ma_regime"] - 1.0
-                        if pd.notna(prev_mkt["ewi_ma_regime"])
-                        and float(prev_mkt["ewi_ma_regime"]) > 0
-                        else float("nan")
-                    )
-                    stop_prices = extended_pair_stop_prices(
-                        overnight,
-                        prev_day,
-                        stop_open,
-                        stop_low,
-                        stop_prev_close,
-                        ind,
-                        prev_market_ext,
-                        cfg,
-                    )
-                    executor.execute_stops(
-                        account, session, stop_prices, stop_prev_close, pending_orders
-                    )
+                _execute_simulated_pair_stop(
+                    account=account,
+                    executor=executor,
+                    session=session,
+                    overnight=overnight,
+                    pending_orders=pending_orders,
+                    day=day,
+                    prev_day=prev_day,
+                    panels=panels,
+                    mkt=mkt,
+                    ind=ind,
+                    cfg=cfg,
+                )
 
             close_row = cast(Any, panels["close"].loc[day])
             mark_prices: dict[str, float] = {}
