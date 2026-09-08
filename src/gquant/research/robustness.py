@@ -70,6 +70,7 @@ def profit_concentration(
 
     This is attribution, not a counterfactual exclusion result. It intentionally uses the
     same configured settlement cost as the account so the sum reconciles with account P&L.
+    Terminal inventory is marked only with information available by the replay's final day.
     """
     pnl: dict[str, float] = defaultdict(float)
     shares: dict[str, int] = defaultdict(int)
@@ -84,14 +85,15 @@ def profit_concentration(
             shares[fill.symbol] -= fill.shares
         else:
             raise ValueError("unknown fill side in profit attribution")
-    if close.empty:
-        raise ValueError("profit attribution requires close prices")
+    if close.empty or result.equity_curve.empty:
+        raise ValueError("profit attribution requires replay and close prices")
+    terminal_day = pd.Timestamp(result.equity_curve.index[-1])
     for symbol, remaining in shares.items():
         if remaining == 0:
             continue
         if remaining < 0:
             raise ValueError("profit attribution found negative terminal inventory")
-        series = close[symbol].dropna()
+        series = close.loc[close.index <= terminal_day, symbol].dropna()
         if series.empty or float(series.iloc[-1]) <= 0:
             raise ValueError(f"{symbol}: no terminal mark for profit attribution")
         pnl[symbol] += remaining * float(series.iloc[-1])
