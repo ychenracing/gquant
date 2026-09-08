@@ -6,7 +6,7 @@ on:
     paths: ['.github/workflows/ruff-format-artifact.yml']
 
 permissions:
-  contents: read
+  contents: write
 
 jobs:
   format:
@@ -16,7 +16,6 @@ jobs:
       - uses: actions/checkout@fbc6f3992d24b796d5a048ff273f7fcc4a7b6c09
         with:
           ref: ${{ github.sha }}
-          persist-credentials: false
       - uses: actions/setup-python@ece7cb06caefa5fff74198d8649806c4678c61a1
         with:
           python-version: '3.12.14'
@@ -32,14 +31,17 @@ jobs:
             tests/test_recovery_modules.py
           python -m ruff check .
           python -m ruff format --check .
-      - uses: actions/upload-artifact@b7c566a772e6b6bfb58ed0dc250532a479d7789f
-        with:
-          name: ruff-formatted-${{ github.sha }}
-          path: |
-            src/gquant/application/operations.py
-            src/gquant/application/runtime.py
-            src/gquant/application/state.py
-            src/gquant/research/robustness.py
-            tests/test_operations.py
+      - name: Commit only formatter changes
+        run: |
+          git config user.name 'github-actions[bot]'
+          git config user.email '41898282+github-actions[bot]@users.noreply.github.com'
+          git add \
+            src/gquant/application/operations.py \
+            src/gquant/application/runtime.py \
+            src/gquant/application/state.py \
+            src/gquant/research/robustness.py \
+            tests/test_operations.py \
             tests/test_recovery_modules.py
-          if-no-files-found: error
+          git diff --cached --check
+          git commit -m 'style: apply repository Ruff formatter'
+          git push origin HEAD:codex/gquant-correctness-operations-20260908
