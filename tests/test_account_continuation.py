@@ -30,6 +30,13 @@ def test_json_round_trip_resume_matches_one_shot_replay(monkeypatch) -> None:
         )
         for symbol in symbols
     }
+    # The first day after the checkpoint is a correlated sell-off. One-shot and
+    # restored replay must both see the saved previous close and arm the same flat period.
+    resume_day = dates[81]
+    for frame in bars.values():
+        mask = frame["date"] == resume_day
+        frame.loc[mask, "close"] = 90.0
+        frame.loc[mask, "low"] = 89.0
 
     def panel(value: object) -> pd.DataFrame:
         return pd.DataFrame(
@@ -71,11 +78,15 @@ def test_json_round_trip_resume_matches_one_shot_replay(monkeypatch) -> None:
         start=str(dates[65].date()),
         end=str(dates[-1].date()),
         max_adv_participation=0.0,
+        corr_liquidation_count=3,
     )
     cfg["rotation_contract"]["pair_stop"] = False
 
     full_engine = eng.BacktestEngine(cfg)
     full = full_engine.run(bars)
+    assert any(
+        str(resume_day.date()) in event and "龙头相关性抛售清仓" in event for event in full.events
+    )
 
     first_engine = eng.BacktestEngine(cfg)
     first_engine.run(bars, stop_after=str(dates[80].date()))
