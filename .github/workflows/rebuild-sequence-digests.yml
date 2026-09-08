@@ -14,7 +14,7 @@ permissions:
 # refreshing that oracle's source behavior hash.
 jobs:
   rebuild:
-    runs-on: macos-latest
+    runs-on: macos-15-intel
     timeout-minutes: 35
     steps:
       - uses: actions/checkout@11bd71901bbe5b1630ceea73d27597364c9af683
@@ -88,8 +88,6 @@ jobs:
 
           behavior = behavior_sha()
 
-          # The new start-boundary rejection must not alter any previously valid economic
-          # scenario. Prove every existing oracle trajectory before changing source identity.
           oracle_path = root / 'tests/fixtures/economic-oracle.json'
           oracle = json.loads(oracle_path.read_text(encoding='utf-8'))
           for case in oracle['scenarios']:
