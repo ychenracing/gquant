@@ -14,6 +14,8 @@ from gquant.research.metrics import summarize
 ROOT = Path(__file__).resolve().parents[1]
 FIXTURE = ROOT / "tests/fixtures/economic-sequence-digests.json"
 SOURCE = json.loads(FIXTURE.read_text(encoding="utf-8"))
+PRODUCER_BEHAVIOR_SHA256 = "1a17e04a0a86d805eb5e467108fd0b7a4d9bce59e69e9009e4981ab2b82c5abd"
+ACTIVE_BEHAVIOR_SHA256 = (ROOT / "tests/fixtures/active-source-behavior.sha256").read_text().strip()
 
 
 def digest(value):
@@ -63,7 +65,8 @@ def canonical_fills(result):
 def test_source_identity_and_complete_case_set():
     assert SOURCE["source_repository"] == "ychenracing/gquant"
     assert SOURCE["producer_parent_sha"] == "772e7650e258b9484b7400aab6d092bbce4998a1"
-    assert SOURCE["behavior_sha256"] == source_behavior_sha256()
+    assert SOURCE["behavior_sha256"] == PRODUCER_BEHAVIOR_SHA256
+    assert ACTIVE_BEHAVIOR_SHA256 == source_behavior_sha256()
     assert SOURCE["default_config"] == CONFIG
     assert len(SOURCE["cases"]) == 24
     assert (

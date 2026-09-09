@@ -39,7 +39,15 @@ python -m gquant account-init --account account.json --as-of 2026-08-28 --risk-r
 python -m gquant resume-account --state outputs/account --actual-events actual.json --end 2026-08-31 --data-dir data --output outputs/account-next
 ```
 
-这两个命令只保存/核对状态并生成下一交易日人工订单清单，不连接券商、不自动下单。格式与恢复规则见[运行指南](docs/operations.md)。
+这两个命令只保存/核对状态并生成下一交易日人工订单清单，不连接券商、不自动下单。人工账户输出同时包含 `conditional_orders.json`：它记录前一收盘已武装、次日只有满足条件才可能执行的保护计划。实际成交、人工偏差、外部入出金和公司行动都必须作为显式事件输入；未知事件字段直接拒绝。格式与恢复规则见[运行指南](docs/operations.md)。
+
+冻结人工账户状态后，可把当日账户、普通计划、条件保护和实际核对结果追加到独立前向观察日志：
+
+```sh
+python -m gquant forward-record --state outputs/account-next --output outputs/forward
+```
+
+同一天相同状态重复记录是幂等的；同一天不同状态或倒退日期会失败，避免事后覆盖前向证据。
 
 ## 如何看结果
 

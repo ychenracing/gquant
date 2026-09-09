@@ -25,6 +25,7 @@ class Runtime:
     regime: RegimeMachine
     guard: PortfolioGuard
     pending_orders: list[Order]
+    conditional_orders: list[dict[str, object]]
     pulse_cooldown_left: int
     prev_target_gross: float
     equity_hist: list[float]
@@ -33,8 +34,10 @@ class Runtime:
     last_known_volume: dict[str, float]
     equity_dates: list[pd.Timestamp]
     equity_values: list[float]
+    account_equity_values: list[float]
     exposure_values: list[float]
     regime_values: list[str]
+    external_cash_flow_total: float
     reset_boundary: dict[str, object] | None
     last_processed_day: pd.Timestamp | None
     reconciliations: list[dict[str, object]]
@@ -74,6 +77,7 @@ def fresh_runtime(
         regime=regime,
         guard=PortfolioGuard(cfg),
         pending_orders=[],
+        conditional_orders=[],
         pulse_cooldown_left=0,
         prev_target_gross=1.0,
         equity_hist=[],
@@ -82,8 +86,10 @@ def fresh_runtime(
         last_known_volume=_last_known(panels["volume"], first_day, allow_zero=True),
         equity_dates=[],
         equity_values=[],
+        account_equity_values=[],
         exposure_values=[],
         regime_values=[],
+        external_cash_flow_total=0.0,
         reset_boundary=None,
         last_processed_day=None,
         reconciliations=[],
@@ -109,6 +115,7 @@ def restored_runtime(cfg: Config, state: EngineState, index: pd.DatetimeIndex) -
         regime=regime,
         guard=guard,
         pending_orders=[cast(Order, dict(order)) for order in restored.pending_orders],
+        conditional_orders=[dict(order) for order in restored.conditional_orders],
         pulse_cooldown_left=restored.pulse_cooldown_left,
         prev_target_gross=restored.prev_target_gross,
         equity_hist=list(restored.vol_equity_hist),
@@ -117,8 +124,10 @@ def restored_runtime(cfg: Config, state: EngineState, index: pd.DatetimeIndex) -
         last_known_volume=dict(restored.last_known_volume),
         equity_dates=list(restored.equity_dates),
         equity_values=list(restored.equity_values),
+        account_equity_values=list(restored.account_equity_values),
         exposure_values=list(restored.exposure_values),
         regime_values=list(restored.regime_values),
+        external_cash_flow_total=restored.external_cash_flow_total,
         reset_boundary=(
             dict(restored.reset_boundary) if restored.reset_boundary is not None else None
         ),
@@ -133,6 +142,7 @@ def capture_state(runtime: Runtime) -> EngineState:
         last_processed_day=last_day,
         account=runtime.account,
         pending_orders=[cast(Order, dict(order)) for order in runtime.pending_orders],
+        conditional_orders=[dict(order) for order in runtime.conditional_orders],
         regime=runtime.regime.export_state(),
         guard=runtime.guard.export_state(),
         planner=runtime.planner.export_state(),
@@ -144,8 +154,10 @@ def capture_state(runtime: Runtime) -> EngineState:
         last_known_volume=dict(runtime.last_known_volume),
         equity_dates=list(runtime.equity_dates),
         equity_values=list(runtime.equity_values),
+        account_equity_values=list(runtime.account_equity_values),
         exposure_values=list(runtime.exposure_values),
         regime_values=list(runtime.regime_values),
+        external_cash_flow_total=runtime.external_cash_flow_total,
         reset_boundary=(
             dict(runtime.reset_boundary) if runtime.reset_boundary is not None else None
         ),

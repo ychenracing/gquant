@@ -2,6 +2,7 @@
 
 from __future__ import annotations
 
+import math
 import re
 from dataclasses import dataclass, field
 from datetime import date
@@ -32,6 +33,15 @@ def _mapping(value: object, label: str) -> dict[str, Any]:
     return {str(key): item for key, item in value.items()}
 
 
+def _finite_list(value: object, label: str) -> list[float]:
+    if not isinstance(value, list):
+        raise ValueError(f"invalid {label}")
+    result = [float(item) for item in value]
+    if not all(math.isfinite(item) and item > 0 for item in result):
+        raise ValueError(f"invalid {label}")
+    return result
+
+
 @dataclass
 class EngineState:
     last_processed_day: pd.Timestamp | None
@@ -53,6 +63,9 @@ class EngineState:
     data_prefix_sha256: str | None = None
     reset_boundary: dict[str, object] | None = None
     reconciliations: list[dict[str, object]] = field(default_factory=list)
+    conditional_orders: list[dict[str, object]] = field(default_factory=list)
+    account_equity_values: list[float] = field(default_factory=list)
+    external_cash_flow_total: float = 0.0
 
     def to_dict(self) -> dict[str, object]:
         positions = []
@@ -96,6 +109,7 @@ class EngineState:
                 "events": list(self.account.events),
             },
             "pending_orders": [dict(order) for order in self.pending_orders],
+            "conditional_orders": [dict(order) for order in self.conditional_orders],
             "regime": dict(self.regime),
             "guard": dict(self.guard),
             "planner": dict(self.planner),
@@ -107,8 +121,10 @@ class EngineState:
             "last_known_volume": dict(self.last_known_volume),
             "equity_dates": [str(day.date()) for day in self.equity_dates],
             "equity_values": list(self.equity_values),
+            "account_equity_values": list(self.account_equity_values or self.equity_values),
             "exposure_values": list(self.exposure_values),
             "regime_values": list(self.regime_values),
+            "external_cash_flow_total": self.external_cash_flow_total,
             "data_prefix_sha256": self.data_prefix_sha256,
             "reset_boundary": dict(self.reset_boundary)
             if self.reset_boundary is not None
@@ -138,7 +154,7 @@ class EngineState:
             symbol = str(item.get("symbol", ""))
             shares = int(item.get("shares", 0))
             sellable = int(item.get("sellable_shares", 0))
-            if not symbol or shares <= 0 or not 0 <= sellable <= shares:
+            if not symbol or shares <= 0 or not 0 <= sellable <= shares or symbol in positions:
                 raise ValueError("invalid position continuation state")
             positions[symbol] = Position(
                 symbol=symbol,
@@ -176,13 +192,17 @@ class EngineState:
         )
 
         pending_raw = raw.get("pending_orders", [])
-        if not isinstance(pending_raw, list):
+        conditional_raw = raw.get("conditional_orders", [])
+        if not isinstance(pending_raw, list) or not all(
+            isinstance(item, dict) for item in pending_raw
+        ):
             raise ValueError("invalid pending order continuation state")
-        pending: list[Order] = []
-        for item in pending_raw:
-            if not isinstance(item, dict):
-                raise ValueError("invalid pending order continuation state")
-            pending.append(dict(item))  # type: ignore[arg-type]
+        if not isinstance(conditional_raw, list) or not all(
+            isinstance(item, dict) for item in conditional_raw
+        ):
+            raise ValueError("invalid conditional order continuation state")
+        pending: list[Order] = [dict(item) for item in pending_raw]  # type: ignore[misc]
+        conditional = [dict(item) for item in conditional_raw]
 
         equity_dates_raw = raw.get("equity_dates", [])
         equity_values_raw = raw.get("equity_values", [])
@@ -199,11 +219,26 @@ class EngineState:
         ):
             raise ValueError("invalid replay history continuation state")
         equity_dates = [pd.Timestamp(value) for value in equity_dates_raw]
-        equity_values = [float(value) for value in equity_values_raw]
+        equity_values = _finite_list(equity_values_raw, "performance equity history")
+        account_equity_raw = raw.get("account_equity_values")
+        if (account_equity_raw is None or account_equity_raw == []) and equity_values:
+            account_equity_raw = equity_values_raw
+        account_equity_values = _finite_list(
+            account_equity_raw if account_equity_raw is not None else [],
+            "account equity history",
+        )
         exposure_values = [float(value) for value in exposure_values_raw]
         regime_values = [str(value) for value in regime_values_raw]
         if (
-            len({len(equity_dates), len(equity_values), len(exposure_values), len(regime_values)})
+            len(
+                {
+                    len(equity_dates),
+                    len(equity_values),
+                    len(account_equity_values),
+                    len(exposure_values),
+                    len(regime_values),
+                }
+            )
             != 1
         ):
             raise ValueError("continuation history lengths differ")
@@ -223,6 +258,9 @@ class EngineState:
             isinstance(item, dict) for item in reconciliations_raw
         ):
             raise ValueError("invalid reconciliation continuation state")
+        external_flow = float(raw.get("external_cash_flow_total", 0.0))
+        if not math.isfinite(external_flow):
+            raise ValueError("invalid external cash flow total")
 
         return cls(
             last_processed_day=last_processed_day,
@@ -245,9 +283,12 @@ class EngineState:
             },
             equity_dates=equity_dates,
             equity_values=equity_values,
+            account_equity_values=account_equity_values,
             exposure_values=exposure_values,
             regime_values=regime_values,
+            external_cash_flow_total=external_flow,
             data_prefix_sha256=prefix_raw,
             reset_boundary=reset_boundary,
             reconciliations=[dict(item) for item in reconciliations_raw],
+            conditional_orders=conditional,
         )

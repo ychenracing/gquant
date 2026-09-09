@@ -16,7 +16,12 @@ from gquant.market.panels import build_panels
 from gquant.portfolio.models import Result
 from gquant.research.audit import has_violations, ledger_audit
 from gquant.research.comparison import continuous_interval, judge
-from gquant.research.robustness import diagnostic_configs, profit_concentration
+from gquant.research.robustness import (
+    diagnostic_configs,
+    drawdown_episode,
+    profit_concentration,
+    turnover_diagnostics,
+)
 from gquant.research.targets import BASELINES, CAPITALS, DIAGNOSTIC, Reference
 
 from .engine import BacktestEngine
@@ -100,7 +105,7 @@ def validate_economics(
         historical = copy.deepcopy(cfg)
         historical["start"] = DIAGNOSTIC["start"]
         historical["end"] = DIAGNOSTIC["end"]
-        _, historical_metrics, historical_audit = evaluator.evaluate(historical)
+        historical_result, historical_metrics, historical_audit = evaluator.evaluate(historical)
         cost_rows = [
             evaluator.reference(ref, slippage=cost)
             for cost in (10.0, 15.0, 20.0)
@@ -112,17 +117,24 @@ def validate_economics(
             "clean_out_of_sample": False,
             "metrics": historical_metrics,
             "execution_ledger": historical_audit,
+            "worst_drawdown_episode": drawdown_episode(historical_result),
+            "turnover": turnover_diagnostics(historical_result),
         }
         report["cost_sensitivity"] = cost_rows
         report["profit_concentration"] = profit_concentration(full, cfg, evaluator.close)
+        report["worst_drawdown_episode"] = drawdown_episode(full)
+        report["turnover_diagnostic"] = turnover_diagnostics(full)
         robustness = []
         for label, diagnostic_cfg in diagnostic_configs(cfg):
-            _, diagnostic_metrics, diagnostic_audit = evaluator.evaluate(diagnostic_cfg)
+            diagnostic_result, diagnostic_metrics, diagnostic_audit = evaluator.evaluate(
+                diagnostic_cfg
+            )
             robustness.append(
                 {
                     "case": label,
                     "metrics": diagnostic_metrics,
                     "execution_ledger": diagnostic_audit,
+                    "turnover": turnover_diagnostics(diagnostic_result),
                     "delta_total_return": diagnostic_metrics["total_return"]
                     - full_metrics["total_return"],
                     "delta_max_drawdown": diagnostic_metrics["max_drawdown"]

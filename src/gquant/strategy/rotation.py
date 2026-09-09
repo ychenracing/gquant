@@ -27,16 +27,10 @@ def _upgrade_partial_sells_for_dropped(
     positions: Mapping[str, object],
     pending_orders: list[Order],
 ) -> None:
-    """若轮动决定彻底落榜，把同日部分减仓升级为一次完整退出。
-
-    这样可避免 engine 看到“已有卖单”后跳过 rotation_exit，留下不该继续持有的
-    残仓；同时把两张同开盘卖单合成一张，避免重复最低佣金。
-    """
+    """若轮动决定彻底落榜，把同日部分减仓升级为一次完整退出。"""
     keep = set(target)
     for order in pending_orders:
-        if order["action"] != "sell":
-            continue
-        if order.get("reason", "") not in _PARTIAL_SELL_REASONS:
+        if order["action"] != "sell" or order.get("reason", "") not in _PARTIAL_SELL_REASONS:
             continue
         symbol = order["symbol"]
         if symbol in keep or symbol not in positions:
@@ -55,16 +49,10 @@ def stable_rotation_target(
     day: pd.Timestamp,
     cfg: Config,
 ) -> list[str]:
-    """返回带轻量迟滞的 top-N 目标集。
-
-    当前持仓若只从 top-N 滑到 `hold_rank`，且新挑战者相对 ret63 优势小于
-    `switch_edge_atr × ATR%`，则先保留 incumbent。ret50 / ret80 只有在各自也
-    达到同一 ATR 归一化的实质优势时才算确认。完整风险退出不受迟滞保护。
-    """
+    """返回带轻量迟滞的 top-N 目标集。"""
     n = int(cfg["max_positions"])
     if n <= 0 or rf.empty:
         return []
-
     rc = cfg["rotation_contract"]
     raw_ranked = list(rf.sort_values(ascending=False).index)
     if not rc["hysteresis"]:
@@ -77,11 +65,9 @@ def stable_rotation_target(
     if not positions or len(ranked) <= n:
         _upgrade_partial_sells_for_dropped(target, positions, pending_orders)
         return target
-
     rank_pos = {symbol: idx + 1 for idx, symbol in enumerate(ranked)}
     atr_row = ind["atr_pct"].loc[day]
     confirm_rows = [ind[name].loc[day] for name in rc["confirm_factors"]]
-
     incumbents = sorted(
         (s for s in positions if s in rank_pos and s not in forced_sells),
         key=lambda s: rank_pos[s],
@@ -89,12 +75,10 @@ def stable_rotation_target(
     for incumbent in incumbents:
         if incumbent in target or rank_pos[incumbent] > int(rc["hold_rank"]):
             continue
-
         newcomers = [s for s in target if s not in positions]
         if not newcomers:
             continue
         challenger = max(newcomers, key=lambda s: rank_pos[s])
-
         inc_atr = atr_row.get(incumbent, float("nan"))
         ch_atr = atr_row.get(challenger, float("nan"))
         valid_atr = [float(x) for x in (inc_atr, ch_atr) if pd.notna(x) and float(x) > 0]
@@ -102,7 +86,6 @@ def stable_rotation_target(
         threshold = float(rc["switch_edge_atr"]) * atr_scale
         edge = float(rf[challenger] - rf[incumbent])
         material_edge = edge >= threshold
-
         confirmed = bool(confirm_rows)
         for row in confirm_rows:
             inc = row.get(incumbent, float("nan"))
@@ -110,10 +93,8 @@ def stable_rotation_target(
             if pd.isna(inc) or pd.isna(ch) or float(ch) - float(inc) < threshold:
                 confirmed = False
                 break
-
         if not material_edge and not confirmed:
             target[target.index(challenger)] = incumbent
-
     deduped = []
     for symbol in sorted(target, key=lambda s: rank_pos.get(s, 10**9)):
         if symbol not in deduped:
@@ -126,6 +107,44 @@ def stable_rotation_target(
     final_target = deduped[:n]
     _upgrade_partial_sells_for_dropped(final_target, positions, pending_orders)
     return final_target
+
+
+def armed_pair_stop_orders(
+    positions: Mapping[str, object],
+    decision_day: pd.Timestamp,
+    close_row: pd.Series[Any],
+    ind: dict[str, pd.DataFrame],
+    market_ext: float,
+    cfg: Config,
+) -> list[dict[str, object]]:
+    """Return next-session conditional stops using only information known at this close."""
+    rc = cfg["rotation_contract"]
+    if not rc["pair_stop"] or len(positions) != 2:
+        return []
+    if pd.isna(market_ext) or float(market_ext) < float(rc["pair_stop_market_ext"]):
+        return []
+    symbols = [str(symbol) for symbol in positions]
+    known_close = close_row.reindex(symbols)
+    if not bool((known_close > 0).all()):
+        return []
+    hist = ind["ret1"][symbols].loc[:decision_day].dropna(how="any").tail(20)
+    if len(hist) < 10:
+        return []
+    pair_corr = float(cast(float, hist.corr().iloc[0, 1]))
+    if pd.isna(pair_corr) or pair_corr < float(rc["pair_stop_corr20"]):
+        return []
+    return [
+        {
+            "symbol": symbol,
+            "action": "sell",
+            "shares": int(getattr(positions[symbol], "shares", 0)),
+            "trigger": "low_at_or_below",
+            "trigger_price": float(known_close[symbol]) * (1.0 + float(cfg["corr_sell_pct"])),
+            "reason": "pair_stop",
+        }
+        for symbol in symbols
+        if int(getattr(positions[symbol], "shares", 0)) > 0
+    ]
 
 
 def extended_pair_stop_prices(
@@ -193,23 +212,21 @@ def apply_rotation_risk_caps(
         return {}
     rc = cfg["rotation_contract"]
     adjusted = {s: max(0.0, float(w)) for s, w in alloc.items()}
-
     if rc["tail_risk"] and float(rc["per_name_loss_budget"]) > 0:
         ret1 = ind["ret1"].loc[:day]
         for symbol, weight in list(adjusted.items()):
             recent = ret1[symbol].dropna().tail(int(rc["tail_lookback"]))
-            worst_loss = 0.0
-            if len(recent):
-                worst_loss = max(0.0, -float(recent.min()))
+            worst_loss = max(0.0, -float(recent.min())) if len(recent) else 0.0
             loss_distance = max(float(cfg["hard_stop_pct"]), worst_loss)
-            loss_cap = float(rc["per_name_loss_budget"]) / loss_distance
-            adjusted[symbol] = min(weight, float(cfg["max_single_weight"]), loss_cap)
-
+            adjusted[symbol] = min(
+                weight,
+                float(cfg["max_single_weight"]),
+                float(rc["per_name_loss_budget"]) / loss_distance,
+            )
     total = sum(adjusted.values())
     if total > target_gross > 0:
         scale = target_gross / total
         adjusted = {s: w * scale for s, w in adjusted.items()}
-
     if rc["common_risk"] and len(adjusted) > 1 and float(rc["common_vol_cap"]) > 0:
         symbols = list(adjusted)
         lookback = int(rc["common_vol_lookback"])
@@ -224,7 +241,6 @@ def apply_rotation_risk_caps(
                 if realized_vol > cap:
                     scale = cap / realized_vol
                     adjusted = {s: w * scale for s, w in adjusted.items()}
-
     return adjusted
 
 
@@ -239,7 +255,6 @@ def rotation_weights(
     if not rot_target or target_gross <= 0:
         return {}
     cap = cfg["max_single_weight"]
-
     if cfg["rotation_sizing"] == "atr_risk_budget":
         risk_pct = cfg["rotation_risk_pct"]
         floor_pct = cfg["rotation_atr_floor_pct"]
@@ -253,15 +268,11 @@ def rotation_weights(
                 a = floor_pct
             alloc[s] = min(cap, risk_pct / max(float(a), floor_pct))
         return apply_rotation_risk_caps(alloc, target_gross, cfg, ind, day)
-
     rel_weights = cfg["rotation_rank_weights"]
     n = len(rot_target)
     rel = [rel_weights[i] if i < len(rel_weights) else rel_weights[-1] for i in range(n)]
     total_rel = sum(rel)
     alloc = {s: target_gross * rel[i] / total_rel for i, s in enumerate(rot_target)}
-
-    # water-filling: 触顶标的的超额按 headroom 回填给未触顶标的。
-    n = len(alloc)
     for _ in range(n):
         overflow = sum(v - cap for v in alloc.values() if v > cap)
         if overflow <= 1e-12:
