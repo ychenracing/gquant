@@ -97,7 +97,10 @@ def apply_actual_fills(
         ordinary = planned.get(key, 0)
         protected = conditional.get(key, 0)
         authorized = max(ordinary, protected)
-        actual = int(record["actual_shares"])
+        actual_raw = record["actual_shares"]
+        if isinstance(actual_raw, bool) or not isinstance(actual_raw, int):
+            raise RuntimeError("actual fill reconciliation returned non-integer shares")
+        actual = actual_raw
         authorization = (
             "ordinary+conditional"
             if ordinary and protected
