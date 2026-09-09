@@ -12,6 +12,8 @@ from gquant.portfolio.models import Account, Order
 
 from .reconciliation import (
     apply_actual_fills as _apply_actual_fills,
+)
+from .reconciliation import (
     apply_corporate_actions as _apply_corporate_actions,
 )
 
