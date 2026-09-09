@@ -12,6 +12,8 @@ Use the smallest sufficient implementation and existing dependencies. Keep depen
 
 Skills provide methods, not additional authorization or approval gates. Continue authorized work without repeated start confirmations. Verify affected behavior first, then expand on a stable candidate. Run architecture, input, publication, packaging and economic checks appropriate to the change; an intermediate test pass or checkpoint is not completion.
 
+Treat a failed check, rejected candidate or invalidated hypothesis as feedback, not task completion. Diagnose the failure and, if the original goal remains reachable, continue with the shortest valid alternative path. Do not weaken acceptance criteria, suppress failed evidence, or bypass safety, authorization or frozen contracts; stop only when the goal is shown unreachable under current constraints or no safe authorized action remains.
+
 ## Economic and data boundaries
 
 Preserve close-time decisions and next-tradable-session execution, T+1 sellability, independent preset protection, order-own budgets, actual position slots, and cumulative participation budgets. Preserve account and risk state across the requested continuous interval.
