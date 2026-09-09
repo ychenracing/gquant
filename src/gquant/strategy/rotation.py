@@ -157,24 +157,47 @@ def extended_pair_stop_prices(
     market_ext: float,
     cfg: Config,
 ) -> dict[str, float]:
-    """Return fills for prior-close conditional pair stops in the simulated replay."""
-    armed = armed_pair_stop_orders(positions, prev_day, prev_close_row, ind, market_ext, cfg)
-    result: dict[str, float] = {}
-    for order in armed:
-        symbol = str(order["symbol"])
-        stop_level = float(order["trigger_price"])
-        current_open = open_row.get(symbol)
-        current_low = low_row.get(symbol)
-        if (
-            pd.isna(current_open)
-            or pd.isna(current_low)
-            or float(current_open) <= 0
-            or float(current_low) <= 0
-            or float(current_low) > stop_level
-        ):
-            continue
-        result[symbol] = float(current_open) if float(current_open) <= stop_level else stop_level
-    return result
+    """Return independent pre-committed stops for an overheated correlated pair.
+
+    Setup is decided entirely at the previous close: the market equal-weight index must be
+    sufficiently extended above its regime MA and the two overnight holdings must have high
+    20-day return correlation. Once armed, each name owns its own pre-committed stop using
+    ``corr_sell_pct``. A gap through that stop fills at the opening auction; otherwise the
+    stop level is used. The other name's later intraday path is never consulted.
+    """
+    rc = cfg["rotation_contract"]
+    if not rc["pair_stop"] or len(positions) != 2:
+        return {}
+    if pd.isna(market_ext) or float(market_ext) < float(rc["pair_stop_market_ext"]):
+        return {}
+
+    symbols = list(positions)
+    prev_close = prev_close_row.reindex(symbols)
+    current_open = open_row.reindex(symbols)
+    current_low = low_row.reindex(symbols)
+    # Previous-close setup needs both names, but today's executable bar is local
+    # to each stop. A missing bar in the other name cannot revoke this protection.
+    if not bool((prev_close > 0).all()):
+        return {}
+    valid = (current_open > 0) & (current_low > 0)
+
+    hist = ind["ret1"][symbols].loc[:prev_day].dropna(how="any").tail(20)
+    if len(hist) < 10:
+        return {}
+    pair_corr = float(cast(float, hist.corr().iloc[0, 1]))
+    if pd.isna(pair_corr) or pair_corr < float(rc["pair_stop_corr20"]):
+        return {}
+
+    stop_levels = prev_close * (1.0 + float(cfg["corr_sell_pct"]))
+    return {
+        symbol: float(
+            current_open[symbol]
+            if current_open[symbol] <= stop_levels[symbol]
+            else stop_levels[symbol]
+        )
+        for symbol in symbols
+        if valid[symbol] and current_low[symbol] <= stop_levels[symbol]
+    }
 
 
 def apply_rotation_risk_caps(

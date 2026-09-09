@@ -93,7 +93,9 @@ def _snapshot_prefix_sha256(
 
 def _state_account(state: EngineState) -> dict[str, object]:
     return {
-        "as_of": str(state.last_processed_day.date()) if state.last_processed_day is not None else None,
+        "as_of": str(state.last_processed_day.date())
+        if state.last_processed_day is not None
+        else None,
         "cash": state.account.cash,
         "positions": [
             {
@@ -269,9 +271,22 @@ def parse_actual_events(
     if not isinstance(raw, dict) or not isinstance(raw.get("sessions"), list):
         raise ValueError("actual events must contain a sessions list")
     result: dict[pd.Timestamp, dict[str, list[dict[str, object]]]] = {}
+    allowed_session_fields = {
+        "date",
+        "fills",
+        "corporate_actions",
+        "cash_flows",
+        "manual_adjustments",
+    }
+    unknown_top = set(raw) - {"sessions"}
+    if unknown_top:
+        raise ValueError(f"unknown actual-events field: {sorted(unknown_top)[0]}")
     for session in raw["sessions"]:
         if not isinstance(session, dict):
             raise ValueError("actual session must be an object")
+        unknown = set(session) - allowed_session_fields
+        if unknown:
+            raise ValueError(f"unknown actual session field: {sorted(unknown)[0]}")
         day = _timestamp(session.get("date"), "actual session date")
         if day <= after or day in result:
             raise ValueError("actual session dates must be distinct and after saved state")
@@ -392,11 +407,17 @@ def resume_and_publish(
     requested_end = pd.Timestamp(cfg["end"])
     if requested_end <= state.last_processed_day:
         raise ValueError("resume end must be after saved account state")
-    events = parse_actual_events(actual_events, state.last_processed_day) if actual_events is not None else {}
+    events = (
+        parse_actual_events(actual_events, state.last_processed_day)
+        if actual_events is not None
+        else {}
+    )
     snapshot = admit_snapshot(data_dir)
     if state.data_prefix_sha256 is None:
         raise ValueError("saved account state has no admitted data prefix identity")
-    current_prefix = _snapshot_prefix_sha256(snapshot, list(cfg["universe"]), state.last_processed_day)
+    current_prefix = _snapshot_prefix_sha256(
+        snapshot, list(cfg["universe"]), state.last_processed_day
+    )
     if current_prefix != state.data_prefix_sha256:
         raise ValueError("admitted data history differs from saved account state")
     bars = {symbol: snapshot.bars[symbol] for symbol in cfg["universe"]}
@@ -419,7 +440,9 @@ def resume_and_publish(
         "account_reset": bool(final_state.reset_boundary),
         "reset_boundary": dict(final_state.reset_boundary or {}),
         "last_processed_day": (
-            str(final_state.last_processed_day.date()) if final_state.last_processed_day is not None else None
+            str(final_state.last_processed_day.date())
+            if final_state.last_processed_day is not None
+            else None
         ),
         "actual_sessions": [str(day.date()) for day in sorted(events)],
     }

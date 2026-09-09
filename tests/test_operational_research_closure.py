@@ -12,7 +12,7 @@ from gquant.application.engine import BacktestEngine, _flow_neutral_equity
 from gquant.application.forward import append_forward_record, build_forward_record
 from gquant.application.operations import initialize_account_state, parse_actual_events
 from gquant.config import CONFIG
-from gquant.execution.reconciliation import (
+from gquant.execution.account_events import (
     apply_actual_fills,
     apply_cash_flows,
     apply_corporate_actions,
@@ -127,12 +127,8 @@ def test_pair_stop_is_armed_entirely_from_prior_close_information() -> None:
         index=days,
     )
     positions = {
-        "sz300308": Position(
-            "sz300308", 1000, 90.0, 110.0, days[0], sellable_shares=1000
-        ),
-        "sz300502": Position(
-            "sz300502", 800, 180.0, 220.0, days[0], sellable_shares=800
-        ),
+        "sz300308": Position("sz300308", 1000, 90.0, 110.0, days[0], sellable_shares=1000),
+        "sz300502": Position("sz300502", 800, 180.0, 220.0, days[0], sellable_shares=800),
     }
     orders = armed_pair_stop_orders(
         positions,
@@ -143,12 +139,8 @@ def test_pair_stop_is_armed_entirely_from_prior_close_information() -> None:
         cfg=cfg,
     )
     assert [order["symbol"] for order in orders] == ["sz300308", "sz300502"]
-    assert orders[0]["trigger_price"] == pytest.approx(
-        100.0 * (1.0 + cfg["corr_sell_pct"])
-    )
-    assert orders[1]["trigger_price"] == pytest.approx(
-        200.0 * (1.0 + cfg["corr_sell_pct"])
-    )
+    assert orders[0]["trigger_price"] == pytest.approx(100.0 * (1.0 + cfg["corr_sell_pct"]))
+    assert orders[1]["trigger_price"] == pytest.approx(200.0 * (1.0 + cfg["corr_sell_pct"]))
 
 
 def test_manual_adjustments_and_external_cash_flows_are_explicit_and_fail_closed() -> None:
@@ -246,9 +238,7 @@ def test_forward_record_is_append_only_and_idempotent_for_same_source_state() ->
         "identity.json": {"source": "abc", "data": "def"},
         "next_orders.json": [{"symbol": "sz300308", "action": "buy", "shares": 100}],
         "conditional_orders.json": _conditional_stop(),
-        "reconciliations.json": [
-            {"date": "2026-08-31", "symbol": "sz300308", "actual_shares": 0}
-        ],
+        "reconciliations.json": [{"date": "2026-08-31", "symbol": "sz300308", "actual_shares": 0}],
         "report.json": {"mode": "manual_account_continuation"},
     }
     record = build_forward_record(bundle)

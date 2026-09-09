@@ -57,7 +57,9 @@ def parser() -> argparse.ArgumentParser:
     account.add_argument("--config", type=Path)
     account.add_argument("--data-dir", type=Path, default=Path("data"))
     account.add_argument("--output", type=Path, required=True)
-    resume = commands.add_parser("resume-account", help="从已保存账户状态继续并核对实际成交与账户事件")
+    resume = commands.add_parser(
+        "resume-account", help="从已保存账户状态继续并核对实际成交与账户事件"
+    )
     resume.add_argument(
         "--state", type=Path, required=True, help="account-init/resume-account 的输出根目录"
     )
@@ -67,7 +69,9 @@ def parser() -> argparse.ArgumentParser:
     resume.add_argument(
         "--actual-events", type=Path, help="按交易日列出的权威成交、人工偏差、现金流和公司行动 JSON"
     )
-    forward = commands.add_parser("forward-record", help="把已发布人工账户状态追加到不可回写的前向观察日志")
+    forward = commands.add_parser(
+        "forward-record", help="把已发布人工账户状态追加到不可回写的前向观察日志"
+    )
     forward.add_argument("--state", type=Path, required=True, help="已验证的人工账户发布根目录")
     forward.add_argument("--output", type=Path, required=True, help="独立前向观察日志发布根目录")
     fetch = commands.add_parser("fetch-data", help="联网获取独立候选数据；不修改冻结 data/ 目录")

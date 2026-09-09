@@ -131,7 +131,9 @@ def turnover_diagnostics(result: Result) -> dict[str, Any]:
         "gross_notional_over_average_equity": (
             gross_notional / average_equity if average_equity > 0 else None
         ),
-        "switch_days": sum(1 for sides_on_day in by_day.values() if {"buy", "sell"} <= sides_on_day),
+        "switch_days": sum(
+            1 for sides_on_day in by_day.values() if {"buy", "sell"} <= sides_on_day
+        ),
         "reason_counts": dict(sorted(reasons.items())),
     }
 
@@ -150,9 +152,7 @@ def drawdown_episode(result: Result) -> dict[str, Any]:
     after_trough = equity.loc[equity.index > trough]
     recovered_rows = after_trough[after_trough >= peak_value]
     recovery = pd.Timestamp(recovered_rows.index[0]) if not recovered_rows.empty else None
-    episode_fills = [
-        fill for fill in result.trades if peak < pd.Timestamp(fill.date) <= trough
-    ]
+    episode_fills = [fill for fill in result.trades if peak < pd.Timestamp(fill.date) <= trough]
     reasons = Counter(fill.reason for fill in episode_fills)
     regimes = Counter(str(value) for value in result.regime_series.loc[peak:trough])
     exposure = result.daily_exposure.loc[peak:trough].astype(float)

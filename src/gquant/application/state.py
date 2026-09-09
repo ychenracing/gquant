@@ -121,7 +121,7 @@ class EngineState:
             "last_known_volume": dict(self.last_known_volume),
             "equity_dates": [str(day.date()) for day in self.equity_dates],
             "equity_values": list(self.equity_values),
-            "account_equity_values": list(self.account_equity_values),
+            "account_equity_values": list(self.account_equity_values or self.equity_values),
             "exposure_values": list(self.exposure_values),
             "regime_values": list(self.regime_values),
             "external_cash_flow_total": self.external_cash_flow_total,
@@ -193,7 +193,9 @@ class EngineState:
 
         pending_raw = raw.get("pending_orders", [])
         conditional_raw = raw.get("conditional_orders", [])
-        if not isinstance(pending_raw, list) or not all(isinstance(item, dict) for item in pending_raw):
+        if not isinstance(pending_raw, list) or not all(
+            isinstance(item, dict) for item in pending_raw
+        ):
             raise ValueError("invalid pending order continuation state")
         if not isinstance(conditional_raw, list) or not all(
             isinstance(item, dict) for item in conditional_raw
@@ -218,8 +220,12 @@ class EngineState:
             raise ValueError("invalid replay history continuation state")
         equity_dates = [pd.Timestamp(value) for value in equity_dates_raw]
         equity_values = _finite_list(equity_values_raw, "performance equity history")
+        account_equity_raw = raw.get("account_equity_values")
+        if (account_equity_raw is None or account_equity_raw == []) and equity_values:
+            account_equity_raw = equity_values_raw
         account_equity_values = _finite_list(
-            raw.get("account_equity_values", equity_values_raw), "account equity history"
+            account_equity_raw if account_equity_raw is not None else [],
+            "account equity history",
         )
         exposure_values = [float(value) for value in exposure_values_raw]
         regime_values = [str(value) for value in regime_values_raw]

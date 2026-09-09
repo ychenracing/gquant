@@ -11,7 +11,9 @@ from gquant.infrastructure.artifacts import publish, read_latest
 
 
 def _sha256_json(value: object) -> str:
-    encoded = json.dumps(value, sort_keys=True, separators=(",", ":"), ensure_ascii=False, allow_nan=False)
+    encoded = json.dumps(
+        value, sort_keys=True, separators=(",", ":"), ensure_ascii=False, allow_nan=False
+    )
     return hashlib.sha256(encoded.encode("utf-8")).hexdigest()
 
 

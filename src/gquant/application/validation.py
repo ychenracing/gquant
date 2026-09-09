@@ -126,7 +126,9 @@ def validate_economics(
         report["turnover_diagnostic"] = turnover_diagnostics(full)
         robustness = []
         for label, diagnostic_cfg in diagnostic_configs(cfg):
-            diagnostic_result, diagnostic_metrics, diagnostic_audit = evaluator.evaluate(diagnostic_cfg)
+            diagnostic_result, diagnostic_metrics, diagnostic_audit = evaluator.evaluate(
+                diagnostic_cfg
+            )
             robustness.append(
                 {
                     "case": label,
