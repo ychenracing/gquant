@@ -12,7 +12,7 @@ Use the smallest sufficient implementation and existing dependencies. Keep depen
 
 Skills provide methods, not additional authorization or approval gates. Continue authorized work without repeated start confirmations. Verify affected behavior first, then expand on a stable candidate. Run architecture, input, publication, packaging and economic checks appropriate to the change; an intermediate test pass or checkpoint is not completion.
 
-Treat a failed check, rejected candidate or invalidated hypothesis as feedback, not task completion. Diagnose the failure and, if the original goal remains reachable, continue with the shortest valid alternative path. Do not weaken acceptance criteria, suppress failed evidence, or bypass safety, authorization or frozen contracts; stop only when the goal is shown unreachable under current constraints or no safe authorized action remains.
+Treat a failed check, rejected candidate or invalidated hypothesis as feedback, not task completion. Diagnose it and continue with an evidence-supported alternative or a bounded check that distinguishes plausible causes, within the authorized scope and any task budget. If attempts add no information, reassess other authorized paths rather than repeat them. Finish when acceptance is met; if no safe authorized action remains, preserve progress and report the specific blocker or evidence gap without requiring proof that the goal is impossible. Do not weaken acceptance criteria, suppress failed evidence, or bypass safety, authorization or frozen contracts.
 
 ## Economic and data boundaries
 
